@@ -4,8 +4,8 @@ from app.database import db # Se ajustó para apuntar a la base de datos central
 class Coordinacion(db.Model):
     __tablename__ = 'coordinaciones'
 
-    id = db.Column(db.Integer, primary_key=True)
-    # unique=True reemplaza al existsByNombre del repositorio Java
+    id = db.Column(db.BigInteger, primary_key=True, autoincrement=True)
+
     nombre = db.Column(db.String(100), unique=True, nullable=False)
     activo = db.Column(db.Boolean, default=True)
 

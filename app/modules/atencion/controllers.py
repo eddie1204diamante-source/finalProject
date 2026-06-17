@@ -31,7 +31,7 @@ def preparar_datos_aprendiz(aprendiz):
 @atencion_bp.route('/')
 @login_required
 def listar():
-    # AJUSTE CLAVE: Usamos 'profesional' que es el nombre real en tu models.py
+
     atenciones = Atencion.query.options(joinedload(Atencion.profesional)).order_by(Atencion.id.asc()).all()
     return render_template('atencion/lista.html', atenciones=atenciones)
 

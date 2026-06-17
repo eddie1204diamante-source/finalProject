@@ -2,26 +2,26 @@ from flask import Flask, redirect, url_for
 from app.database import db
 from flask_login import LoginManager
 from flask_mail import Mail
+import os
 
 mail = Mail()
 
 def create_app():
     app = Flask(__name__)
-    
-    # Configuración de base de datos
-    app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/NexusPython'
+
+    # Configuración desde variables de entorno
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('MYSQL_URL')
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = 'tu_clave_secreta'
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
     # Configuración de correo
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
-    app.config['MAIL_USERNAME'] = 'v64149378@gmail.com'
-    app.config['MAIL_PASSWORD'] = 'hxilscvjkfqozxis' 
-    app.config['MAIL_DEFAULT_SENDER'] = 'v64149378@gmail.com'
+    app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
+    app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
+    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
 
-    # Inicialización de extensiones
     db.init_app(app)
     mail.init_app(app)
 

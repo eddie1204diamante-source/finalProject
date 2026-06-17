@@ -1,0 +1,117 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. CONTENEDOR PRINCIPAL (Ancho ajustado a 900px para usar más pantalla) */
+    .form-container {
+        max-width: 900px; /* Incrementado de 600px */
+        margin: 20px auto;
+        padding: 40px; /* Más padding para respirar */
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+
+    /* 2. ESTILOS DE FORMULARIO */
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 20px;
+        border-radius: 50px;
+        border: 1px solid #ddd;
+        outline: none;
+        box-sizing: border-box;
+        background-color: white; /* Asegura fondo blanco en selects */
+        font-size: 1rem;
+    }
+
+    /* 3. BOTONES (Ancho estándar SENA) */
+    .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 30px; }
+    
+    .btn-update {
+        background: linear-gradient(135deg, #f09819, #ffc300);
+        color: white; border: none; padding: 12px 40px;
+        border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s;
+    }
+    .btn-cancel {
+        background: #eee; color: #666; text-decoration: none;
+        padding: 12px 40px; border-radius: 50px; font-weight: bold;
+    }
+
+    /* 4. MENSAJES DE ERROR */
+    .alerta-error-form {
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+    }
+</style>
+
+<div class="form-container">
+    <h3 style="text-align: center; margin-bottom: 30px; color: #333;">Editar Ficha: {{ f.codigo }}</h3>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alerta-error-form">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{ url_for('ficha.editar_ficha', id=f.id) }}" method="POST">
+        
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Código de la Ficha</label>
+                <input type="text" name="codigo" class="form-control" value="{{ f.codigo }}" required>
+            </div>
+
+            <div class="form-group" style="flex: 1;">
+                <label>Coordinación</label>
+                <select name="coordinacion_id" class="form-control" required>
+                    {% for c in coordinaciones %}
+                        <option value="{{ c.id }}" {{ 'selected' if f.coordinacion_id == c.id }}>
+                            {{ c.nombre }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Programa de Formación</label>
+            <input type="text" name="programa" class="form-control" value="{{ f.programa }}" required>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Jornada</label>
+                <select name="jornada" class="form-control">
+                    <option value="Diurna" {{ 'selected' if f.jornada == 'Diurna' }}>Diurna</option>
+                    <option value="Mixta" {{ 'selected' if f.jornada == 'Mixta' }}>Mixta</option>
+                    <option value="Nocturna" {{ 'selected' if f.jornada == 'Nocturna' }}>Nocturna</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Modalidad</label>
+                <select name="modalidad" class="form-control">
+                    <option value="Presencial" {{ 'selected' if f.modalidad == 'Presencial' }}>Presencial</option>
+                    <option value="Virtual" {{ 'selected' if f.modalidad == 'Virtual' }}>Virtual</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <a href="{{ url_for('ficha.listar_fichas') }}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-update">Actualizar Ficha</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,0 +1,259 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* Reset y Contenedor */
+    .form-container, .form-container * { box-sizing: border-box; }
+    
+    .form-container { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1000px; margin: 0 auto; width: 100%; }
+    .form-title { font-weight: 800; color: #1a202c; margin-bottom: 25px; }
+    
+    .input-nexus { width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; font-size: 0.9rem; background: #fff; }
+    .input-nexus:focus { border-color: #2575FC; box-shadow: 0 0 0 3px rgba(37,117,252,0.1); }
+    
+    /* VALIDACIONES Y ERRORES */
+    .input-error { border-color: #fc8181 !important; background-color: #fff5f5 !important; }
+    
+    .error-msg { 
+        color: #e53e3e; font-size: 0.75rem; font-weight: 700; 
+        margin-top: 4px; display: none; /* Oculto por defecto */
+    }
+
+    /* Mostrar error si el input previo tiene la clase de error */
+    .input-nexus.input-error + .error-msg {
+        display: block;
+        animation: fadeIn 0.2s ease-in;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ALERTAS FLASH */
+    .alert { padding: 15px 20px; margin-bottom: 20px; border-radius: 12px; font-weight: 700; font-size: 0.9rem; border: 1px solid transparent; }
+    .alert-success { background-color: #f0fff4; color: #38a169; border-color: #9ae6b4; }
+    .alert-danger { background-color: #fff5f5; color: #e53e3e; border-color: #feb2b2; }
+
+    /* Banner de Información */
+    .info-card { background: #f8faff; border-left: 5px solid #6A11CB; padding: 20px; border-radius: 12px; margin-bottom: 25px; width: 100%; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .info-item { display: flex; flex-direction: column; overflow: hidden; }
+    .info-label { font-size: 0.7rem; text-transform: uppercase; color: #718096; font-weight: 800; margin-bottom: 2px; }
+    .info-value { color: #2d3748; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Layout del Formulario */
+    .grid-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+    .full-width { grid-column: span 3; }
+    .half-width { grid-column: span 2; }
+    
+    label { display: block; margin-bottom: 6px; font-weight: 700; color: #4a5568; font-size: 0.85rem; }
+    textarea.input-nexus { height: 80px; resize: vertical; }
+
+    .btn-nexus-form { 
+        background: linear-gradient(135deg, #6A11CB, #2575FC); color: white !important; 
+        padding: 12px 30px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer; transition: 0.3s;
+    }
+    .btn-nexus-form:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,117,252,0.2); }
+
+    .btn-cancelar { 
+        color: #718096; text-decoration: none; font-weight: 700; padding: 12px 25px; 
+        border-radius: 50px; border: 1px solid #e2e8f0; transition: 0.3s; display: inline-block;
+    }
+</style>
+
+<div class="dashboard-area">
+    <div class="form-container">
+        <h2 class="form-title">Editar Comité #{{ comite.id }}</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <div class="info-card">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-value">{{ aprendiz.nombres }} {{ aprendiz.apellidos }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Documento</span>
+                    <span class="info-value">{{ aprendiz.numero_documento }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ficha</span>
+                    <span class="info-value">{{ aprendiz.ficha.codigo if aprendiz.ficha else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Edad</span>
+                    <span class="info-value">{{ aprendiz.edad }} años</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Correo</span>
+                    <span class="info-value">{{ aprendiz.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono</span>
+                    <span class="info-value">{{ aprendiz.telefono }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form id="comiteForm" method="POST" action="{{ url_for('comite.editar', id=comite.id) }}" novalidate>
+            <div class="grid-fields">
+                <div>
+                    <label>Fecha Citación *</label>
+                    <input type="date" name="fecha" id="fecha" class="input-nexus" value="{{ comite.fecha.strftime('%Y-%m-%d') }}" required>
+                    <span class="error-msg">Seleccione una fecha válida</span>
+                    <small id="helper-fecha" style="display:block; margin-top:5px; font-size:0.7rem; font-weight:600;"></small>
+                </div>
+                <div>
+                    <label>Hora *</label>
+                    <input type="time" name="hora" id="hora" class="input-nexus" value="{{ comite.hora.strftime('%H:%M') }}" required>
+                    <span class="error-msg">Ingrese una hora entre 08:00 y 17:00</span>
+                </div>
+                <div>
+                    <label>Tipo de Falta *</label>
+                    <select name="tipo_falta" class="input-nexus" required>
+                        <option value="ACADÉMICA" {{ 'selected' if comite.tipo_falta == 'ACADÉMICA' else '' }}>Académica</option>
+                        <option value="DISCIPLINARIA" {{ 'selected' if comite.tipo_falta == 'DISCIPLINARIA' else '' }}>Disciplinaria</option>
+                    </select>
+                    <span class="error-msg">Seleccione el tipo</span>
+                </div>
+
+                <div>
+                    <label>Sede *</label>
+                    <input type="text" name="sede" class="input-nexus" value="{{ comite.sede }}" required>
+                    <span class="error-msg">Especifique la sede</span>
+                </div>
+                <div>
+                    <label>Piso / Bloque *</label>
+                    <input type="text" name="piso" class="input-nexus" value="{{ comite.piso }}" required>
+                    <span class="error-msg">Indique el piso</span>
+                </div>
+                <div>
+                    <label>Ambiente *</label>
+                    <input type="text" name="ambiente" class="input-nexus" value="{{ comite.ambiente }}" required>
+                    <span class="error-msg">Indique el ambiente</span>
+                </div>
+
+                <div class="half-width">
+                    <label>Instructor que reporta *</label>
+                    <select name="instructor_id" class="input-nexus" required>
+                        {% for i in instructores %}
+                            <option value="{{ i.id }}" {{ 'selected' if comite.instructor_id == i.id else '' }}>{{ i.nombres }} {{ i.apellidos }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="error-msg">Seleccione un instructor</span>
+                </div>
+                <div>
+                    <label>Profesional Bienestar *</label>
+                    <select name="profesional_bienestar" class="input-nexus" required>
+                        {% for p in profesionales %}
+                            <option value="{{ p.id }}" {{ 'selected' if comite.profesional_bienestar == p.id else '' }}>{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="error-msg">Seleccione un profesional</span>
+                </div>
+
+                <div class="full-width">
+                    <label>Motivo de la falta *</label>
+                    <textarea name="motivo" class="input-nexus" required>{{ comite.motivo }}</textarea>
+                    <span class="error-msg">Describa el motivo</span>
+                </div>
+                <div class="full-width">
+                    <label>Recomendación del Comité *</label>
+                    <textarea name="recomendacion" class="input-nexus" required>{{ comite.recomendacion }}</textarea>
+                    <span class="error-msg">Ingrese la recomendación</span>
+                </div>
+                
+                <div class="half-width">
+                    <label>Plan de Mejoramiento *</label>
+                    <textarea name="plan_mejoramiento" class="input-nexus" required>{{ comite.plan_mejoramiento }}</textarea>
+                    <span class="error-msg">Defina el plan de mejora</span>
+                </div>
+                <div>
+                    <label>Fecha Plazo Plan *</label>
+                    <input type="date" name="fecha_plazo" class="input-nexus" value="{{ comite.fecha_plazo.strftime('%Y-%m-%d') if comite.fecha_plazo else '' }}" required>
+                    <span class="error-msg">Seleccione la fecha límite</span>
+                </div>
+
+                <div class="full-width">
+                    <label>Observaciones Finales *</label>
+                    <textarea name="observaciones" class="input-nexus" required>{{ comite.observaciones }}</textarea>
+                    <span class="error-msg">Ingrese observaciones finales</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 20px;">
+                <button type="submit" class="btn-nexus-form" style="flex: 2;">Actualizar Registro</button>
+                <a href="{{ url_for('comite.listar') }}" class="btn-cancelar" style="flex: 1; text-align: center;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('comiteForm');
+    const fechaInput = document.getElementById('fecha');
+    const helper = document.getElementById('helper-fecha');
+    
+    // Lógica de Calendario (Día 20)
+    const hoy = new Date();
+    const diaActual = hoy.getDate();
+    let minF, maxF;
+
+    if (diaActual <= 20) {
+        minF = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        maxF = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
+        helper.textContent = "Periodo abierto: disponible hasta el día 20.";
+        helper.style.color = "#38a169";
+    } else {
+        minF = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
+        maxF = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 20);
+        helper.textContent = "Plazo del mes vencido. Agendando para el mes siguiente.";
+        helper.style.color = "#e53e3e";
+    }
+
+    const fmt = (d) => d.toISOString().split('T')[0];
+    fechaInput.setAttribute('min', fmt(minF));
+    fechaInput.setAttribute('max', fmt(maxF));
+
+    // Validación al enviar
+    form.addEventListener('submit', function(e) {
+        let isValid = true;
+        
+        // Limpiar errores previos
+        this.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+
+        // Validar requeridos
+        this.querySelectorAll('[required]').forEach(input => {
+            if (!input.value.trim()) {
+                isValid = false;
+                input.classList.add('input-error');
+            }
+        });
+
+        // Validar Hora
+        const horaVal = document.getElementById('hora').value;
+        if (horaVal) {
+            const h = parseInt(horaVal.split(':')[0]);
+            if (h < 8 || h >= 17) {
+                isValid = false;
+                document.getElementById('hora').classList.add('input-error');
+            }
+        }
+
+        if (!isValid) {
+            e.preventDefault();
+            const firstError = document.querySelector('.input-error');
+            if (firstError) firstError.focus();
+        }
+    });
+});
+</script>
+{% endblock %}

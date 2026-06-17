@@ -1,0 +1,232 @@
+/* =========================================
+   1. ESTILOS BASE Y LAYOUT GENERAL (NEXUS)
+========================================= */
+body {
+    display: block !important; 
+    margin: 0;
+    padding: 0;
+    background: #f0f2f7;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
+}
+
+/* =========================================
+   2. SIDEBAR 
+========================================= */
+.sidebar {
+    width: 250px;
+    background: linear-gradient(180deg, #6A11CB, #2575FC);
+    color: white;
+    padding: 20px 0;
+    height: 100vh;
+    position: fixed;
+    top: 0;
+    left: 0;
+    overflow-y: auto;
+    box-shadow: 0 0 15px rgba(0,0,0,0.25);
+    z-index: 1000;
+}
+
+.sidebar h3 {
+    text-align: center;
+    margin-bottom: 30px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-size: 1.2rem;
+    color: #ffffff;
+}
+
+.sidebar ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    padding-bottom: 40px;
+}
+
+.sidebar ul li a {
+    display: block;
+    padding: 15px 20px;
+    text-decoration: none;
+    color: white;
+    font-weight: 600;
+    border-left: 4px solid transparent;
+    transition: 0.3s ease;
+}
+
+.sidebar ul li a:hover,
+.sidebar ul li.active a {
+    background: rgba(255,255,255,0.15);
+    border-left: 4px solid #00f6ff;
+    backdrop-filter: blur(4px);
+}
+
+.sidebar-logo {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    margin-bottom: 20px;
+    margin-top: -10px;
+}
+
+.sidebar-logo img {
+    width: 100px; 
+    display: block;
+    margin: 10px auto;
+    mix-blend-mode: lighten;
+    background: transparent !important;
+}
+
+/* =========================================
+   3. CONTENIDO PRINCIPAL
+========================================= */
+.main-content {
+    margin-left: 250px;
+    width: calc(100% - 250px);
+    padding: 0;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* =========================================
+   4. HEADER TOP — AJUSTE DE RUTA DE RULO.PNG
+========================================= */
+.header-top {
+    background-color: #6A11CB; 
+    /* Ruta corregida: asumiendo que el CSS está en static/css/ */
+    background-image: url('../img/rulo.png'); 
+    background-repeat: repeat; 
+    background-size: auto 100%; 
+    padding: 10px 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    height: 120px; 
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    position: sticky;
+    top: 0;
+    z-index: 900;
+}
+
+.header-image-container {
+    flex-grow: 1;
+    max-width: 100%; 
+    height: 100%;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+}
+
+.header-dashboard-image {
+    width: auto;
+    max-width: 100%;
+    max-height: 95%; 
+    object-fit: contain;
+}
+
+.user-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    min-width: 150px;
+}
+
+.user-info {
+    font-weight: 700;
+    color: #ffffff !important; 
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+}
+
+.btn-logout {
+    background: white;
+    border: none;
+    border-radius: 50px;
+    color: #ff4d4d;
+    cursor: pointer;
+    padding: 8px 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    transition: 0.25s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    text-decoration: none;
+    display: inline-block;
+}
+
+.btn-logout:hover {
+    background: #ff4d4d;
+    color: white;
+    box-shadow: 0 4px 10px rgba(255, 77, 77, 0.3);
+}
+
+/* =========================================
+   5. TARJETAS (CARDS) — ESTILO WAPETÓN
+========================================= */
+.dashboard-area {
+    padding: 40px;
+    flex-grow: 1;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    margin-top: 20px;
+}
+
+.stat-card {
+    background: white;
+    padding: 30px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.stat-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 6px;
+    background: linear-gradient(90deg, #6A11CB, #2575FC);
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+}
+
+.stat-card h4 {
+    margin: 0 0 15px 0;
+    color: #6c757d;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.stat-card .value {
+    margin: 0;
+    font-size: 3rem;
+    font-weight: 500;
+    background: linear-gradient(90deg, #333, #555);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* =========================================
+   6. TABLAS, FORMULARIOS Y VALIDACIONES
+========================================= */
+.crud-table { width: 100%; border-collapse: separate; border-spacing: 0; }
+.crud-table th { padding: 18px; text-align: left; background: #f8f9fa; font-size: 0.8rem; text-transform: uppercase; }
+.crud-table td { padding: 18px; border-bottom: 1px solid #f1f3f5; }
+
+.error-message {
+    display: block;
+    color: #dc3545;
+    font-size: 0.8rem;
+    font-weight: 700;
+    margin-top: 4px;
+}

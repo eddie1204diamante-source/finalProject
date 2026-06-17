@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>{% block title %}Dashboard{% endblock %} | Sistema Integral SENA</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/estilos.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    {# Bloque para CSS específico - AQUÍ SOLO VA UNA VEZ #}
+    {% block extra_css %}{% endblock %}
+</head>
+
+<body>
+
+    <div class="sidebar">
+        <div class="sidebar-logo">
+            <img src="{{ url_for('static', filename='img/logo-sena.png') }}">
+        </div>
+
+        <h3>SENA | NEXUS</h3>
+
+        <ul>
+            <li class="{{ 'active' if request.path == '/dashboard' else '' }}">
+                <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+            </li>
+
+            {% if current_user.is_authenticated and current_user.rol.strip().upper() == 'ADMIN' %}
+                <li class="{{ 'active' if request.path.startswith('/usuarios') else '' }}">
+                    <a href="{{ url_for('usuarios.listar') }}">Administrar Usuarios</a>
+                </li>
+            {% endif %}
+
+            {% if current_user.is_authenticated and current_user.rol.strip().upper() in ['ADMIN', 'PSICOLOGA', 'T_SOCIAL'] %}
+                {# AJUSTE DE RUTA: Ahora detecta tanto '/coordinaciones' como '/coordinaciones/' con la nueva estructura limpia #}
+                <li class="{{ 'active' if request.path == '/coordinaciones' or request.path.startswith('/coordinaciones/') else '' }}">
+                    <a href="{{ url_for('coordinacion.listar_coordinaciones') }}">Coordinaciones</a>
+                </li>
+                
+                <li class="{{ 'active' if request.path.startswith('/instructores') else '' }}">
+                    <a href="{{ url_for('instructor.listar_instructores') }}">Instructores</a>
+                </li>
+                
+                <li class="{{ 'active' if request.path.startswith('/fichas') else '' }}">
+                    <a href="{{ url_for('ficha.listar_fichas') }}">Gestión de Fichas</a>
+                </li>
+
+                <li class="{{ 'active' if request.path.startswith('/aprendices') else '' }}">
+                    <a href="{{ url_for('aprendices.listar') }}">Aprendices</a>
+                </li>
+
+                <li class="{{ 'active' if request.path.startswith('/comites') else '' }}">
+                    <a href="{{ url_for('comite.listar') }}">Comités</a>
+                </li>
+
+                <li class="{{ 'active' if request.path.startswith('/atencion') else '' }}">
+                    <a href="{{ url_for('atencion.listar') }}">Atención</a>
+                </li>
+
+              <li class="{{ 'active' if request.path.startswith('/talleres') else '' }}">
+    <a href="{{ url_for('talleres.index') }}">Talleres</a>
+</li>
+                <li class="{{ 'active' if request.path.startswith('/reportes') else '' }}">
+    <a href="{{ url_for('reportes.ver_reportes') }}">Reportes</a>
+</li>
+            {% endif %}
+        </ul>
+    </div>
+
+    <div class="main-content">
+
+        <header class="header-top">
+            <div class="header-image-container">
+                <img src="{{ url_for('static', filename='img/dash.png') }}" class="header-dashboard-image">
+            </div>
+
+            <div class="user-controls">
+                <span class="user-info">
+                    {{ current_user.email if current_user.is_authenticated else '' }}
+                </span>
+                <a href="{{ url_for('auth.logout') }}" class="btn-logout">Cerrar Sesión</a>
+            </div>
+        </header>
+
+        {# Área donde se inyecta el contenido de cada módulo #}
+        {% block content %}{% endblock %}
+
+    </div> {# Bloque para JavaScript específico de cada vista #}
+    {% block extra_js %}{% endblock %}
+
+    <script>
+        // 1. MODAL DE BIENVENIDA (Inyectado desde Python)
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    {% if category == 'success' %}
+                        Swal.fire({
+                            title: 'NEXUS | Sistema Integral',
+                            text: '{{ message }}', // Las comillas evitan el error rojo en VS Code
+                            icon: 'success',
+                            confirmButtonColor: '#39A900', // Color verde SENA
+                            timer: 4000
+                        });
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        // 2. CONFIRMACIÓN DE CERRAR SESIÓN
+        const btnLogout = document.querySelector('.btn-logout');
+        if (btnLogout) {
+            btnLogout.addEventListener('click', function(e) {
+                e.preventDefault();
+                const url = this.getAttribute('href');
+
+                Swal.fire({
+                    title: '¿Cerrar sesión?',
+                    text: "Tendrás que ingresar tus credenciales nuevamente.",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#39A900',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: '<i class="fa fa-sign-out"></i> Sí, salir',
+                    cancelButtonText: 'Cancelar'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        }
+    </script>
+</body>
+</html>

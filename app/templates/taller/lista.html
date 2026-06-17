@@ -1,0 +1,235 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    .dashboard-area {
+        padding: 20px;
+    }
+    .actions-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 25px;
+        background: #ffffff;
+        padding: 15px 25px;
+        border-radius: 20px;
+        box-shadow: 0 2px 6px rgba(0,0,0,0.03);
+    }
+    .actions-header h2 {
+        margin: 0;
+        color: #1e2a3e;
+        font-size: 1.6rem;
+        font-weight: 600;
+    }
+    .header-tools {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+    }
+    .search-input {
+        padding: 8px 16px;
+        border: 1px solid #cbd5e1;
+        border-radius: 40px;
+        width: 220px;
+        font-size: 0.85rem;
+        transition: all 0.2s;
+    }
+    .search-input:focus {
+        outline: none;
+        border-color: #4f46e5;
+        box-shadow: 0 0 0 2px rgba(79,70,229,0.1);
+    }
+    .btn-nuevo-modulo {
+        background: #4f46e5;
+        color: white;
+        padding: 8px 20px;
+        border-radius: 40px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .btn-nuevo-modulo:hover {
+        background: #4338ca;
+        transform: translateY(-1px);
+    }
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        overflow-x: auto;
+    }
+    .crud-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.9rem;
+    }
+    .crud-table th {
+        background: #f8fafc;
+        padding: 14px 12px;
+        font-weight: 600;
+        color: #334155;
+        border-bottom: 1px solid #e2e8f0;
+        text-align: left;
+    }
+    .crud-table td {
+        padding: 12px 12px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+    .crud-table tr:hover {
+        background: #fefce8;
+        transition: 0.1s;
+    }
+    .center {
+        text-align: center;
+    }
+    /* Badges de estado */
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        padding: 4px 10px;
+        border-radius: 40px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+    }
+    .badge-programado {
+        background: #e0f2fe;
+        color: #0369a1;
+    }
+    .badge-realizado {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .badge-cancelado {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+    /* Botones de acción */
+    .btn-sena {
+        padding: 4px 12px;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+    }
+    .btn-sena-edit {
+        background: #e2e3e5;
+        color: #2c3e50;
+    }
+    .btn-sena-edit:hover {
+        background: #cbd5e1;
+    }
+    .btn-sena-delete {
+        background: #fee2e2;
+        color: #b91c1c;
+    }
+    .btn-sena-delete:hover {
+        background: #fecaca;
+    }
+    .btn-sena-activate {
+        background: #dcfce7;
+        color: #15803d;
+    }
+    .btn-sena-activate:hover {
+        background: #bbf7d0;
+    }
+    @media (max-width: 700px) {
+        .actions-header { flex-direction: column; align-items: stretch; gap: 12px; }
+        .header-tools { flex-direction: column; }
+        .search-input { width: auto; }
+    }
+</style>
+
+<div class="dashboard-area">
+    <div class="actions-header">
+        <h2>📋 Gestión de Talleres</h2>
+        <div class="header-tools">
+            <input type="text" id="searchInput" class="search-input" placeholder="🔍 Buscar taller..." autocomplete="off">
+            <a href="{{ url_for('talleres.crear') }}" class="btn-nuevo-modulo">
+                ➕ Nuevo Taller
+            </a>
+        </div>
+    </div>
+
+    <div class="table-container">
+        <table class="crud-table" id="tablaDatos">
+            <thead>
+                <tr>
+                    <th class="center">ID</th>
+                    <th>Nombre</th>
+                    <th>Instructor</th>
+                    <th class="center">Fecha</th>
+                    <th class="center">Estado</th>
+                    <th class="center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in talleres %}
+                <tr>
+                    <td class="center">{{ t.id }}</td>
+                    <td><strong>{{ t.nombre }}</strong></td>
+                    <td>{{ t.instructor }}</td>
+                    <td class="center">{{ t.fecha_programada.strftime('%d/%m/%Y') if t.fecha_programada else 'S/N' }}</td>
+                    <td class="center">
+                        {% if t.estado == 'Programado' %}
+                            <span class="badge badge-programado">🟢 Programado</span>
+                        {% elif t.estado == 'Realizado' %}
+                            <span class="badge badge-realizado">✅ Realizado</span>
+                        {% else %}
+                            <span class="badge badge-cancelado">❌ Cancelado</span>
+                        {% endif %}
+                    </td>
+                    <td class="center">
+                        <div style="display: flex; gap: 6px; justify-content: center;">
+                            <a href="{{ url_for('talleres.editar', id=t.id) }}" class="btn-sena btn-sena-edit">✏️ Editar</a>
+                            <form action="{{ url_for('talleres.cambiar_estado', id=t.id) }}" method="POST" style="display:inline;" onsubmit="return confirmarAccion('{{ t.estado }}', '{{ t.nombre }}')">
+                                <button type="submit" class="btn-sena {{ 'btn-sena-delete' if t.estado != 'Cancelado' else 'btn-sena-activate' }}">
+                                    {% if t.estado != 'Cancelado' %}🗑️ Cancelar{% else %}🔄 Activar{% endif %}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filtrarTabla() {
+        let input = document.getElementById('searchInput');
+        let filter = input.value.toUpperCase();
+        let rows = document.querySelectorAll('#tablaDatos tbody tr');
+        rows.forEach(row => {
+            let nombre = row.cells[1].textContent.toUpperCase();
+            let instructor = row.cells[2].textContent.toUpperCase();
+            if (nombre.includes(filter) || instructor.includes(filter)) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    document.getElementById('searchInput').addEventListener('keyup', filtrarTabla);
+
+    function confirmarAccion(estadoActual, nombreTaller) {
+        let mensaje = (estadoActual !== 'Cancelado') 
+            ? `¿Cancelar el taller "${nombreTaller}"?` 
+            : `¿Reactivar el taller "${nombreTaller}"?`;
+        return confirm(mensaje);
+    }
+</script>
+{% endblock %}

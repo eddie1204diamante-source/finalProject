@@ -1,0 +1,172 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. ESTRUCTURA Y BUSCADOR */
+    .actions-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; }
+    .search-input { padding: 12px 25px; border-radius: 50px; border: 1px solid #e2e8f0; width: 300px; outline: none; }
+    .btn-nuevo-modulo { 
+        background: linear-gradient(135deg, #6A11CB, #2575FC); color: white !important; 
+        padding: 12px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; 
+    }
+
+    /* 2. ALERTAS (MENSAJES FLASH) */
+    .alert { 
+        padding: 15px 20px; 
+        margin-bottom: 20px; 
+        border-radius: 12px; 
+        font-weight: 700; 
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+        animation: slideIn 0.3s ease-out;
+    }
+    .alert-success { background-color: #f0fff4; color: #38a169; border-color: #9ae6b4; }
+    .alert-error, .alert-danger { background-color: #fff5f5; color: #e53e3e; border-color: #feb2b2; }
+    .alert-warning { background-color: #fffaf0; color: #9c4221; border-color: #feebc8; }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 3. TABLA CENTRADA Y ORDENADA */
+    .table-container { background: white; border-radius: 15px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); overflow-x: auto; }
+    .crud-table { width: 100%; border-collapse: collapse; min-width: 1200px; }
+    
+    .crud-table th { 
+        background-color: #f8faff; padding: 15px; border-bottom: 2px solid #edf2f7; 
+        color: #4a5568; font-size: 0.75rem; text-transform: uppercase; 
+        text-align: center; 
+    }
+    
+    .crud-table td { 
+        padding: 15px; border-bottom: 1px solid #edf2f7; 
+        font-size: 0.85rem; color: #2d3748; 
+        text-align: center; 
+        vertical-align: middle;
+    }
+
+    .text-left { text-align: left !important; }
+
+    /* 4. CLASES DE ESTILO SENA */
+    .badge-sena { padding: 6px 14px; border-radius: 20px; font-weight: 800; font-size: 0.7rem; text-transform: uppercase; display: inline-block; }
+    .falta-academica { background: #e0f2fe; color: #0369a1; }
+    .falta-disciplinaria { background: #fef2f2; color: #991b1b; }
+
+    .status-vigente { font-weight: bold; color: #27ae60; background: rgba(39, 174, 96, 0.1); padding: 4px 10px; border-radius: 10px; }
+    .status-anulado { font-weight: bold; color: #e74c3c; background: rgba(231, 76, 60, 0.1); padding: 4px 10px; border-radius: 10px; }
+
+    .btn-nexus-table { 
+        padding: 8px 20px; 
+        border-radius: 50px; 
+        color: white !important; 
+        font-weight: bold; 
+        font-size: 0.75rem; 
+        text-decoration: none; 
+        display: inline-block; 
+        white-space: nowrap; 
+        transition: 0.3s;
+    }
+    .btn-edit { background: linear-gradient(135deg, #f09819, #ffc300); }
+    .btn-anular { background: linear-gradient(135deg, #e74c3c, #ff5e62); }
+    .btn-activar { background: linear-gradient(135deg, #27ae60, #2ecc71); } /* Ajustado de btn-reactivar */
+    .btn-nexus-table:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+    .badge-ficha { color: #2575FC; font-weight: 700; font-family: sans-serif; font-size: 0.9rem; }
+    .text-muted { color: #94a3b8; font-size: 0.75rem; }
+    .bold-id { color: #2d3748; font-weight: bold; font-size: 0.9rem; }
+</style>
+
+<div class="dashboard-area">
+    <div class="actions-header">
+        <h2 style="font-weight: 800; color: #1a202c; margin: 0;">Historial de Comités</h2>
+        <div style="display: flex; gap: 15px;">
+            <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar aprendiz, ficha o instructor...">
+            <a href="{{ url_for('comite.crear') }}" class="btn-nuevo-modulo">+ Programar Comité</a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }}">
+            {{ message }}
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <div class="table-container">
+        <table class="crud-table" id="tablaDatos">
+            <thead>
+                <tr>
+                    <th width="60">ID</th> 
+                    <th>Fecha / Hora</th> 
+                    <th class="text-left">Aprendiz</th> 
+                    <th>Ficha</th> 
+                    <th>Instructor</th> 
+                    <th>Falta</th> 
+                    <th>Estado</th> 
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in comites %}
+                <tr>
+                    <td class="bold-id">{{ c.id }}</td>
+                    <td>
+                        <strong>{{ c.fecha.strftime('%d/%m/%Y') if c.fecha else 'N/A' }}</strong><br>
+                        <span class="text-muted">{{ c.hora.strftime('%I:%M %p') if c.hora else '--:--' }}</span>
+                    </td>
+                    <td class="text-left">
+                        <div style="font-weight: 600;">{{ c.aprendiz.nombres }} {{ c.aprendiz.apellidos }}</div>
+                        <small class="text-muted">{{ c.aprendiz.numero_documento }}</small>
+                    </td>
+                    <td><span class="badge-ficha">{{ c.aprendiz.ficha.codigo if (c.aprendiz and c.aprendiz.ficha) else 'N/A' }}</span></td>
+                    <td>{{ c.instructor.nombres }} {{ c.instructor.apellidos if c.instructor else '' }}</td>
+                    <td>
+                        <span class="badge-sena {{ 'falta-academica' if c.tipo_falta == 'ACADÉMICA' else 'falta-disciplinaria' }}">
+                            {{ c.tipo_falta }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="{{ 'status-vigente' if c.activo else 'status-anulado' }}">
+                            {{ 'Activo' if c.activo else 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <a href="{{ url_for('comite.editar', id=c.id) }}" class="btn-nexus-table btn-edit">Editar</a>
+                            <a href="{{ url_for('comite.cambiar_estado', id=c.id) }}" 
+                               class="btn-nexus-table {{ 'btn-anular' if c.activo else 'btn-activar' }}">
+                                {{ 'Inactivar' if c.activo else 'Activar' }}
+                            </a>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filtrarTabla() {
+        var input = document.getElementById("searchInput").value.toUpperCase();
+        var rows = document.querySelectorAll("#tablaDatos tbody tr");
+        rows.forEach(row => {
+            row.style.display = row.textContent.toUpperCase().includes(input) ? "" : "none";
+        });
+    }
+
+    // Auto-cerrar alertas después de 5 segundos
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            alert.style.transition = "opacity 0.5s ease";
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+</script>
+{% endblock %}

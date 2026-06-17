@@ -1,0 +1,143 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. CONTENEDOR PRINCIPAL TIPO CARD */
+    .import-container {
+        max-width: 800px;
+        margin: 20px auto;
+        background: white;
+        border-radius: 15px;
+        padding: 40px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        text-align: center;
+    }
+
+    .import-header h2 {
+        color: #1a202c;
+        font-weight: 800;
+        margin-bottom: 10px;
+    }
+
+    .import-description {
+        color: #718096;
+        margin-bottom: 30px;
+        font-size: 0.95rem;
+    }
+
+    /* 2. ZONA DE CARGA (Dropzone style) */
+    .upload-area {
+        border: 2px dashed #cbd5e0;
+        border-radius: 12px;
+        padding: 40px 20px;
+        transition: all 0.3s ease;
+        background: #f8faff;
+        cursor: pointer;
+        margin-bottom: 25px;
+    }
+
+    .upload-area:hover {
+        border-color: #2575FC;
+        background: #f0f5ff;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+        color: #2575FC;
+        margin-bottom: 15px;
+        display: block;
+    }
+
+    /* 3. INPUT DE ARCHIVO OCULTO */
+    #fileInput {
+        display: none;
+    }
+
+    .file-label {
+        font-weight: bold;
+        color: #4a5568;
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    /* 4. BOTONES */
+    .btn-nexus-import {
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white !important;
+        padding: 12px 40px;
+        border-radius: 50px;
+        text-decoration: none;
+        font-weight: bold;
+        border: none;
+        cursor: pointer;
+        font-size: 1rem;
+        box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
+        transition: transform 0.2s;
+    }
+
+    .btn-nexus-import:hover {
+        transform: translateY(-2px);
+        opacity: 0.9;
+    }
+
+    .btn-cancelar {
+        display: inline-block;
+        margin-top: 15px;
+        color: #a0aec0;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .btn-cancelar:hover { color: #e74c3c; }
+
+    /* Estilo para el nombre del archivo seleccionado */
+    #fileName {
+        margin-top: 10px;
+        font-weight: bold;
+        color: #27ae60;
+    }
+</style>
+
+<div class="dashboard-area">
+    <div class="import-container">
+        <div class="import-header">
+            <h2>Importación Masiva de Aprendices</h2>
+            <p class="import-description">Cargue su archivo de Excel (.xlsx) para registrar múltiples aprendices de forma automática.</p>
+        </div>
+
+        <form action="{{ url_for('aprendices.importar_excel') }}" method="POST" enctype="multipart/form-data">
+            <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                <span class="upload-icon">📁</span>
+                <span class="file-label" id="fileLabel">Haga clic para seleccionar o arrastre el archivo aquí</span>
+                <input type="file" name="file" id="fileInput" accept=".xlsx, .xls" onchange="updateFileName()">
+                <div id="fileName"></div>
+            </div>
+
+            <div class="instructions" style="text-align: left; background: #fffbeb; border-left: 4px solid #f6ad55; padding: 15px; margin-bottom: 25px; border-radius: 4px;">
+                <strong style="color: #975a16; font-size: 0.85rem;">Nota Importante:</strong>
+                <ul style="margin: 5px 0 0 0; color: #744210; font-size: 0.8rem; padding-left: 20px;">
+                    <li>El archivo debe contener las columnas: Documento, Nombres, Apellidos, Correo, Celular y Ficha.</li>
+                    <li>Asegúrese de que los códigos de ficha ya existan en el sistema.</li>
+                </ul>
+            </div>
+
+            <button type="submit" class="btn-nexus-import">Iniciar Importación</button>
+        </form>
+
+        <a href="{{ url_for('aprendices.listar') }}" class="btn-cancelar">Volver al listado</a>
+    </div>
+</div>
+
+<script>
+    function updateFileName() {
+        const input = document.getElementById('fileInput');
+        const fileNameDiv = document.getElementById('fileName');
+        const fileLabel = document.getElementById('fileLabel');
+        
+        if (input.files.length > 0) {
+            fileNameDiv.textContent = "Archivo seleccionado: " + input.files[0].name;
+            fileLabel.textContent = "Archivo listo para cargar";
+        }
+    }
+</script>
+{% endblock %}

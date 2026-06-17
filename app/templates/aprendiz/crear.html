@@ -1,0 +1,159 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 950px; 
+        width: 85%;       
+        margin: 30px auto;
+        padding: 40px;
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px 20px;
+        border-radius: 50px; 
+        border: 1px solid #ddd;
+        outline: none;
+        box-sizing: border-box;
+        font-size: 1rem;
+        background-color: white;
+        transition: border-color 0.3s ease;
+    }
+
+    .form-control:focus { border-color: #2575FC; }
+
+    .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+    
+    .btn-save {
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white; border: none; padding: 12px 40px;
+        border-radius: 50px; font-weight: bold; cursor: pointer; transition: 0.3s;
+    }
+
+    .btn-cancel {
+        background: #eee; color: #666; text-decoration: none;
+        padding: 12px 40px; border-radius: 50px; font-weight: bold;
+        display: inline-block;
+    }
+
+    .alerta-error-form {
+        color: #e74c3c;
+        background: rgba(231, 76, 60, 0.1);
+        padding: 10px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .check-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 15px 25px;
+        background: #f8faff;
+        border-radius: 50px;
+        width: fit-content;
+    }
+    .check-group input { width: 18px; height: 18px; cursor: pointer; }
+</style>
+
+<div class="form-container">
+    <h3 style="text-align: center; margin-bottom: 30px; color: #333;">Registrar Nuevo Aprendiz</h3>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alerta-error-form">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{ url_for('aprendices.crear_aprendiz') }}" method="POST" novalidate>
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Tipo Documento</label>
+                <select name="tipo_documento" class="form-control">
+                    <option value="" disabled selected>Seleccione...</option>
+                    <option value="CC">Cédula de Ciudadanía</option>
+                    <option value="TI">Tarjeta de Identidad</option>
+                    <option value="PEP">PEP</option>
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Número de Documento</label>
+                <input type="text" name="numero_documento" class="form-control" placeholder="Máx 10 dígitos" maxlength="10">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Nombres</label>
+                <input type="text" name="nombres" class="form-control" maxlength="70">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Apellidos</label>
+                <input type="text" name="apellidos" class="form-control" maxlength="70">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" name="fecha_nacimiento" class="form-control" min="{{ min_date }}" max="{{ max_date }}">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Correo Institucional</label>
+                <input type="email" name="correo" class="form-control" placeholder="usuario@soy.sena.edu.co">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Número de Celular</label>
+                <input type="text" name="celular" class="form-control" placeholder="300..." maxlength="10">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Etapa de Formación</label>
+                <select name="etapa_formacion" class="form-control">
+                    <option value="" disabled selected>Seleccione etapa...</option>
+                    <option value="Lectiva">Lectiva</option>
+                    <option value="Productiva">Productiva</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Ficha de Formación</label>
+                <select name="ficha_id" class="form-control">
+                    <option value="" disabled selected>Seleccione una ficha...</option>
+                    {% for f in fichas %}
+                        <option value="{{ f.id }}">{{ f.codigo }} - {{ f.programa }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1; display: flex; align-items: flex-end; padding-bottom: 20px;">
+                <div class="check-group">
+                    <input type="checkbox" name="es_vocero" id="es_vocero" value="1">
+                    <label for="es_vocero" style="margin: 0; cursor: pointer;">¿Es vocero de esta ficha?</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <a href="{{ url_for('aprendices.listar') }}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-save">Guardar Aprendiz</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

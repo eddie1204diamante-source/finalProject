@@ -1,0 +1,214 @@
+{% extends "dashboard.html" %}
+{% block content %}
+
+<style>
+.download-section {
+    background: white; padding: 30px; border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea;
+    margin-bottom: 30px; text-align: center;
+}
+.filter-bar { display: flex; gap: 15px; justify-content: center; flex-wrap: wrap; align-items: flex-end; margin-bottom: 20px; }
+.filter-group { display: flex; flex-direction: column; text-align: left; min-width: 180px; }
+.filter-group label { font-size: 0.8rem; font-weight: 700; color: #6c757d; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+.filter-group input, .filter-group select {
+    padding: 10px 15px; border: 1px solid #ced4da; border-radius: 50px;
+    font-size: 14px; background-color: #f8f9fa; color: #495057; outline: none; width: 100%;
+}
+.filter-group input:focus, .filter-group select:focus { border-color: #6A11CB; background: #fff; }
+.report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; }
+.chart-card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #eaeaea; }
+.card-title { color: #495057; font-weight: 700; margin-bottom: 20px; font-size: 1.1em; border-bottom: 2px solid #f1f3f5; padding-bottom: 10px; }
+.full-width { grid-column: span 2; }
+.tabla-reporte { width: 100%; border-collapse: collapse; margin-top: 5px; }
+.tabla-reporte th { background: #f8f9fa; color: #495057; font-weight: 700; padding: 15px; text-align: left; border-bottom: 2px solid #e9ecef; text-transform: uppercase; font-size: 0.85em; }
+.tabla-reporte td { padding: 15px; border-bottom: 1px solid #f1f3f5; color: #555; vertical-align: middle; }
+.btn-outline { background:#fff; color:#6A11CB; border:2px solid #6A11CB; padding:0 25px; border-radius:50px; font-weight:700; cursor:pointer; height:42px; transition: all 0.3s; }
+.btn-outline:hover { background:#6A11CB; color:white; }
+.btn-gradient { background:linear-gradient(135deg,#6A11CB,#2575FC); color:white; border:none; padding:0 30px; border-radius:50px; font-weight:700; cursor:pointer; height:42px; display:flex; align-items:center; gap:8px; transition: all 0.3s; box-shadow: 0 4px 10px rgba(111,66,193,0.4); }
+.btn-gradient:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(111,66,193,0.5); }
+.avatar { width:30px; height:30px; background:#e9ecef; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:bold; color:#6f42c1; }
+@media (max-width: 900px) { .report-grid { grid-template-columns: 1fr; } .full-width { grid-column: span 1; } }
+</style>
+
+<div class="dashboard-area">
+  <div class="download-section">
+    <h3 style="font-size:1.5rem;font-weight:700;color:#343a40;margin-top:0;">Centro de Reportes y Métricas</h3>
+    <p style="color:#666;margin-bottom:25px;max-width:700px;margin-left:auto;margin-right:auto;">
+      Consulte los indicadores de gestión en tiempo real o descargue el informe consolidado en PDF.
+      <br><strong>Por defecto: Desde el 1 de Enero del año actual.</strong>
+    </p>
+
+    <form method="get" id="reportForm">
+      <div class="filter-bar">
+        <div class="filter-group">
+          <label>Desde</label>
+          <input type="date" name="fechaInicio" id="fechaInicio" value="{{ fecha_inicio }}">
+        </div>
+        <div class="filter-group">
+          <label>Hasta</label>
+          <input type="date" name="fechaFin" id="fechaFin" value="{{ fecha_fin }}">
+        </div>
+        <div class="filter-group">
+          <label>Ficha</label>
+          <select name="fichaId" id="fichaId">
+            <option value="">Todas las Fichas</option>
+            {% for f in fichas %}
+            <option value="{{ f.id }}" {% if ficha_id and ficha_id|int == f.id %}selected{% endif %}>
+              {{ f.codigo }} - {{ f.programa }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Profesional</label>
+          <select name="profesionalId" id="profesionalId">
+            <option value="">Todos</option>
+            {% for p in profesionales %}
+            <option value="{{ p.id }}" {% if profesional_id and profesional_id|int == p.id %}selected{% endif %}>
+              {{ p.nombre }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+
+      <div style="display:flex;justify-content:center;gap:15px;">
+        <button type="submit" class="btn-outline">Actualizar Gráficas</button>
+        <button type="button" class="btn-gradient" onclick="descargarPDF()">⬇ Descargar PDF</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="report-grid">
+    <div class="chart-card">
+      <div class="card-title">Comités por Tipo de Falta</div>
+      <div style="height:250px;display:flex;justify-content:center;">
+        <canvas id="chartTipos"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card">
+      <div class="card-title">Comités por Coordinación</div>
+      <div style="height:250px;">
+        <canvas id="chartCoordinacion"></canvas>
+      </div>
+    </div>
+
+    <div class="chart-card full-width">
+      <div class="card-title">Rendimiento del Equipo</div>
+      <table class="tabla-reporte">
+        <thead>
+          <tr>
+            <th>Profesional</th>
+            <th style="text-align:center;">Total Casos</th>
+            <th style="text-align:center;">Abiertos</th>
+            <th style="text-align:center;">En Seguimiento</th>
+            <th style="text-align:center;">Cerrados</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in datos.rendimiento %}
+          <tr>
+            <td>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <div class="avatar">{{ r.nombre[0] }}</div>
+                <span style="font-weight:600;">{{ r.nombre }}</span>
+              </div>
+            </td>
+            <td style="text-align:center;">{{ r.total }}</td>
+            <td style="text-align:center;">
+              <span style="background:rgba(255,77,77,0.1);color:#ff4d4d;padding:6px 12px;border-radius:20px;font-weight:700;font-size:0.85em;">{{ r.abiertos }}</span>
+            </td>
+            <td style="text-align:center;">
+              <span style="background:rgba(255,193,7,0.15);color:#e67e22;padding:6px 12px;border-radius:20px;font-weight:700;font-size:0.85em;">{{ r.en_seguimiento }}</span>
+            </td>
+            <td style="text-align:center;">
+              <span style="background:rgba(37,117,252,0.1);color:#2575FC;padding:6px 12px;border-radius:20px;font-weight:700;font-size:0.85em;">{{ r.cerrados }}</span>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  //@ts-nocheck
+const porTipo = JSON.parse('{{ datos.por_tipo | tojson | safe }}');
+const porCoordinacion = JSON.parse('{{ datos.por_coordinacion | tojson | safe }}');
+const rendimiento = JSON.parse('{{ datos.rendimiento | tojson | safe }}');
+
+  new Chart(document.getElementById('chartTipos'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(porTipo),
+      datasets: [{ data: Object.values(porTipo), backgroundColor: ['#6f42c1','#0dcaf0','#d63384','#fd7e14','#20c997'], borderWidth: 0 }]
+    },
+    options: { maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { usePointStyle: true } } } }
+  });
+
+  new Chart(document.getElementById('chartCoordinacion'), {
+    type: 'bar',
+    data: {
+      labels: Object.keys(porCoordinacion),
+      datasets: [{ label: 'Comités Realizados', data: Object.values(porCoordinacion), backgroundColor: '#6f42c1', borderRadius: 6 }]
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: {
+        y: { beginAtZero: true, suggestedMax: 10, ticks: { stepSize: 2, precision: 0 }, grid: { color: '#f1f3f5' } },
+        x: { grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+
+  document.getElementById('reportForm').addEventListener('submit', function(e) {
+    const inicio = document.getElementById('fechaInicio').value;
+    const fin = document.getElementById('fechaFin').value;
+    if (inicio && fin && new Date(inicio) > new Date(fin)) {
+      e.preventDefault();
+      alert('Error: La fecha final no puede ser menor a la inicial.');
+    }
+  });
+
+ function descargarPDF() {
+    // 1. Capturar las gráficas como imágenes Base64
+    const chart1 = document.getElementById('chartTipos').toDataURL('image/png');
+    const chart2 = document.getElementById('chartCoordinacion').toDataURL('image/png');
+
+    // 2. Crear un formulario invisible para enviar las imágenes al servidor
+    const form = document.createElement('form');
+    form.method = 'POST';
+    form.action = "{{ url_for('reportes.exportar_pdf') }}";
+
+    // Agregar los filtros actuales
+    const formData = new FormData(document.getElementById('reportForm'));
+    for (const [key, value] of formData.entries()) {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value;
+        form.appendChild(input);
+    }
+
+    // Agregar las imágenes de las gráficas
+    const inputImg1 = document.createElement('input');
+    inputImg1.type = 'hidden';
+    inputImg1.name = 'chart_tipos_img';
+    inputImg1.value = chart1;
+    form.appendChild(inputImg1);
+
+    const inputImg2 = document.createElement('input');
+    inputImg2.type = 'hidden';
+    inputImg2.name = 'chart_coord_img';
+    inputImg2.value = chart2;
+    form.appendChild(inputImg2);
+
+    document.body.appendChild(form);
+    form.submit();
+}
+</script>
+{% endblock %}

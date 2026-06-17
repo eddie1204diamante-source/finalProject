@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Iniciar Sesión | Sistema Integral</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='img/logo-sena.png') }}" type="image/png">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
+</head>
+<body>
+
+    <div class="auth-sidebar">
+        <h1 class="nexus-title">NEXUS</h1>
+        <h1>Bienestar al Aprendiz</h1>
+        <p>Sistema Integral de Gestión SENA</p>
+    </div>
+
+    <div class="auth-content">
+        <div class="form-wrapper">
+            
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='img/logo-sena.png') }}" alt="Logo SENA" class="logo-img">
+                <h2>¡Hola de nuevo!</h2>
+                <p class="subtitle">Ingresa tus credenciales para acceder.</p>
+            </div>
+
+            <form method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                {% with messages = get_flashed_messages(with_categories=true) %}
+                  {% if messages %}
+                    {% for category, message in messages %}
+                      <div class="alert-{{ category }}">{{ message }}</div>
+                    {% endfor %}
+                  {% endif %}
+                {% endwith %}
+
+                <div class="form-group">
+                    <label for="username">Correo Institucional</label>
+                    <input type="email" id="username" name="email" class="form-control" placeholder="ejemplo@sena.edu.co" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Contraseña</label>
+                    <input type="password" id="password" name="password" class="form-control" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn-auth">Ingresar</button>
+
+                <div class="auth-footer" style="margin-top: 20px; text-align: center;">
+                    <p>
+                        ¿No tienes una cuenta? <a href="{{ url_for('auth.registro') }}">Regístrate aquí</a>
+                    </p>
+                    <p style="margin-top: 10px;">
+                        <a href="{{ url_for('auth.recuperar_password') }}">¿Olvidaste tu contraseña?</a>
+                    </p>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

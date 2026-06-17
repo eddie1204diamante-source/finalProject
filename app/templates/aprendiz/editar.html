@@ -1,0 +1,124 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    .form-container {
+        max-width: 950px; width: 85%; margin: 30px auto;
+        padding: 40px; background: white; border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 8px; font-weight: bold; color: #555; }
+    .form-control {
+        width: 100%; padding: 12px 20px; border-radius: 50px; border: 1px solid #ddd;
+        outline: none; box-sizing: border-box; font-size: 1rem; transition: border-color 0.3s ease;
+    }
+    .form-control:focus { border-color: #2575FC; }
+    .form-control:disabled { background-color: #f9f9f9; cursor: not-allowed; }
+    
+    .btn-container { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+    .btn-save {
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white; border: none; padding: 12px 40px; border-radius: 50px;
+        font-weight: bold; cursor: pointer; transition: 0.3s;
+    }
+    .btn-cancel {
+        background: #eee; color: #666; text-decoration: none;
+        padding: 12px 40px; border-radius: 50px; font-weight: bold; display: inline-block;
+    }
+    .alerta-error-form {
+        color: #e74c3c; background: rgba(231, 76, 60, 0.1);
+        padding: 10px; border-radius: 10px; margin-bottom: 20px;
+        text-align: center; font-weight: bold;
+    }
+    .check-group {
+        display: flex; align-items: center; gap: 10px; padding: 15px 25px;
+        background: #f8faff; border-radius: 50px; width: fit-content;
+    }
+</style>
+
+<div class="form-container">
+    <h3 style="text-align: center; margin-bottom: 30px; color: #333;">Editar Aprendiz</h3>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alerta-error-form">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <form action="{{ url_for('aprendices.editar_aprendiz', id=a.id) }}" method="POST" novalidate>
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Tipo Documento</label>
+                <input type="text" class="form-control" value="{{ a.tipo_documento }}" disabled>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Número de Documento</label>
+                <input type="text" class="form-control" value="{{ a.numero_documento }}" disabled>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Nombres</label>
+                <input type="text" name="nombres" class="form-control" value="{{ a.nombres }}" maxlength="70">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Apellidos</label>
+                <input type="text" name="apellidos" class="form-control" value="{{ a.apellidos }}" maxlength="70">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Fecha de Nacimiento</label>
+                <input type="date" class="form-control" value="{{ a.fecha_nacimiento }}" disabled>
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Correo Institucional</label>
+                <input type="email" name="correo" class="form-control" value="{{ a.correo }}">
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Número de Celular</label>
+                <input type="text" name="celular" class="form-control" value="{{ a.celular }}" maxlength="10">
+            </div>
+            <div class="form-group" style="flex: 1;">
+                <label>Etapa de Formación</label>
+                <select name="etapa_formacion" class="form-control">
+                    <option value="Lectiva" {% if a.etapa_formacion == 'Lectiva' %}selected{% endif %}>Lectiva</option>
+                    <option value="Productiva" {% if a.etapa_formacion == 'Productiva' %}selected{% endif %}>Productiva</option>
+                </select>
+            </div>
+        </div>
+
+        <div style="display: flex; gap: 20px;">
+            <div class="form-group" style="flex: 1;">
+                <label>Ficha de Formación</label>
+                <select name="ficha_id" class="form-control">
+                    {% for f in fichas %}
+                        <option value="{{ f.id }}" {% if a.ficha_id == f.id %}selected{% endif %}>
+                            {{ f.codigo }} - {{ f.programa }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group" style="flex: 1; display: flex; align-items: flex-end; padding-bottom: 20px;">
+                <div class="check-group">
+                    <input type="checkbox" name="es_vocero" id="es_vocero" value="1" {% if a.es_vocero %}checked{% endif %}>
+                    <label for="es_vocero" style="margin: 0; cursor: pointer;">¿Es vocero de esta ficha?</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="btn-container">
+            <a href="{{ url_for('aprendices.listar') }}" class="btn-cancel">Cancelar</a>
+            <button type="submit" class="btn-save">Actualizar Datos</button>
+        </div>
+    </form>
+</div>
+{% endblock %}

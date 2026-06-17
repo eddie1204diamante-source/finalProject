@@ -1,0 +1,194 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. DISTRIBUCIÓN DE LA CABECERA */
+    .actions-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 15px; 
+    }
+
+    .header-tools { 
+        display: flex; 
+        gap: 15px; 
+        align-items: center; 
+    }
+
+    /* 2. BUSCADOR Y BOTONES */
+    .search-input {
+        padding: 10px 20px; 
+        border-radius: 50px; 
+        border: 1px solid #e2e8f0;
+        outline: none; 
+        font-size: 0.9rem; 
+        width: 250px; 
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+
+    .btn-nuevo-modulo {
+        background: linear-gradient(135deg, #6A11CB, #2575FC); 
+        color: white !important; 
+        padding: 10px 25px; 
+        border-radius: 50px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.9rem; 
+        box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
+        border: none;
+    }
+
+    /* 3. MENSAJES DE ALERTA */
+    .alerta-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .alerta-msg { 
+        display: inline-block;
+        font-weight: bold; 
+        font-size: 1rem;
+        padding: 8px 20px;
+        border-radius: 10px;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .alerta-success { color: #27ae60; background: rgba(39, 174, 96, 0.1); } 
+    .alerta-danger { color: #e74c3c; background: rgba(231, 76, 60, 0.1); }
+    .alerta-warning { color: #d35400; background: rgba(230, 126, 34, 0.1); }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 4. CONTENEDOR DE TABLA */
+    .table-container {
+        background: white; 
+        border-radius: 12px; 
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+
+    .crud-table { width: 100%; border-collapse: collapse; min-width: 1000px; }
+    
+    .crud-table th { 
+        background-color: #f8faff; 
+        padding: 15px; 
+        border-bottom: 2px solid #edf2f7;
+        color: #4a5568; 
+        font-size: 0.8rem; 
+        text-transform: uppercase;
+        text-align: center;
+    }
+
+    .crud-table td { padding: 12px 15px; border-bottom: 1px solid #edf2f7; font-size: 0.85rem; vertical-align: middle; }
+
+    .text-center { text-align: center; }
+
+    .estado-activo { color: #27ae60; background: rgba(39, 174, 96, 0.1); padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.75rem; }
+    .estado-inactivo { color: #e74c3c; background: rgba(231, 76, 60, 0.1); padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.75rem; }
+    
+    .btn-sena { padding: 6px 15px; border-radius: 50px; color: white !important; text-decoration: none; font-weight: bold; font-size: 0.75rem; transition: 0.3s; border: none; cursor: pointer; }
+    .btn-sena-edit { background: linear-gradient(135deg, #f09819, #ffc300); }
+    .btn-sena-delete { background: linear-gradient(135deg, #e74c3c, #ff5e62); }
+    .btn-sena-activate { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+    .btn-sena:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+    .text-muted { color: #718096; font-size: 0.8rem; }
+</style>
+
+<div class="dashboard-area">
+    <div class="actions-header">
+        <h2 style="margin: 0; color: #1a202c;">Gestión de Usuarios</h2>
+        <div class="header-tools">
+            <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar usuario...">
+            {% if current_user.rol == 'ADMIN' %}
+                <a href="{{ url_for('usuarios.crear') }}" class="btn-nuevo-modulo">+ Nuevo Usuario</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="alerta-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alerta-msg alerta-{{ 'success' if category == 'success' else 'danger' if category == 'error' else category }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="table-container">
+        <table class="crud-table" id="tablaDatos">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>NOMBRE COMPLETO</th>
+                    <th>CORREO INSTITUCIONAL</th>
+                    <th>ROL</th>
+                    <th>ESTADO</th> 
+                    {% if current_user.rol == 'ADMIN' %}
+                        <th>ACCIONES</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in usuarios %}
+                <tr>
+                    <td class="text-center text-muted">{{ u.id }}</td>
+                    
+                    <td class="text-center"><strong>{{ u.nombre }}</strong></td>
+                    <td class="text-center"><small class="text-muted">{{ u.email }}</small></td>
+                    
+                    <td class="text-center">
+                        <span style="background: #edf2f7; padding: 4px 10px; border-radius: 8px; font-weight: 600; font-size: 0.75rem;">{{ u.rol }}</span>
+                    </td>
+                    <td class="text-center">
+                        <span class="{{ 'estado-activo' if u.enabled else 'estado-inactivo' }}">
+                             {{ 'Activo' if u.enabled else 'Inactivo' }}
+                        </span>
+                    </td>
+                    {% if current_user.rol == 'ADMIN' %}
+                    <td class="text-center">
+                        <div style="display: flex; gap: 5px; justify-content: center;">
+                            <a href="{{ url_for('usuarios.editar', id=u.id) }}" class="btn-sena btn-sena-edit">Editar</a>
+                            <a href="{{ url_for('usuarios.cambiar_estado', id=u.id) }}" 
+                               class="btn-sena {{ 'btn-sena-delete' if u.enabled else 'btn-sena-activate' }}">
+                                {{ 'Inactivar' if u.enabled else 'Activar' }}
+                            </a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filtrarTabla() {
+        var input = document.getElementById("searchInput").value.toUpperCase();
+        var tr = document.querySelectorAll("#tablaDatos tbody tr");
+        tr.forEach(row => {
+            row.style.display = row.textContent.toUpperCase().includes(input) ? "" : "none";
+        });
+    }
+
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alerta-msg');
+        alerts.forEach(alert => {
+            alert.style.transition = "opacity 0.5s ease";
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+</script>
+{% endblock %}

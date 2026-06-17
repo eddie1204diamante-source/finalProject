@@ -1,0 +1,222 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. DISTRIBUCIÓN DE LA CABECERA */
+    .actions-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 15px; 
+    }
+
+    .header-tools { 
+        display: flex; 
+        gap: 15px; 
+        align-items: center; 
+    }
+
+    /* 2. BUSCADOR Y BOTONES */
+    .search-input {
+        padding: 10px 20px; 
+        border-radius: 50px; 
+        border: 1px solid #e2e8f0;
+        outline: none; 
+        font-size: 0.9rem; 
+        width: 250px; 
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+
+    .btn-nuevo-modulo {
+        background: linear-gradient(135deg, #6A11CB, #2575FC); 
+        color: white !important; 
+        padding: 10px 25px; 
+        border-radius: 50px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.9rem; 
+        box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
+        border: none;
+    }
+
+    /* 3. MENSAJES DE ALERTA */
+    .alerta-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .alerta-msg { 
+        display: inline-block;
+        font-weight: bold; 
+        font-size: 1rem;
+        padding: 8px 20px;
+        border-radius: 10px;
+        animation: slideIn 0.3s ease-out;
+    }
+    
+    .alerta-success { color: #27ae60; background: rgba(39, 174, 96, 0.1); } 
+    .alerta-danger { color: #e74c3c; background: rgba(231, 76, 60, 0.1); }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 4. CONTENEDOR DE TABLA */
+    .table-container {
+        background: white; 
+        border-radius: 12px; 
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+
+    .crud-table { width: 100%; border-collapse: collapse; min-width: 1100px; }
+    .crud-table th { 
+        background-color: #f8faff; 
+        padding: 15px; 
+        border-bottom: 2px solid #edf2f7;
+        color: #4a5568; 
+        font-size: 0.8rem; 
+        text-transform: uppercase; 
+    }
+
+    .crud-table td { padding: 12px 15px; border-bottom: 1px solid #edf2f7; font-size: 0.85rem; vertical-align: middle; }
+
+    /* ESTILOS DE CONSULTA */
+    .badge-consulta { padding: 6px 12px; border-radius: 8px; font-weight: bold; font-size: 0.7rem; display: inline-block; }
+    .c1 { background: #ebf8ff; color: #2b6cb0; }
+    .c2 { background: #faf5ff; color: #6b46c1; }
+    .c3 { background: #fff5f5; color: #c53030; }
+
+    /* BADGES DE ESTADO */
+    .estado-activo { color: #27ae60; background: rgba(39, 174, 96, 0.1); padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.75rem; }
+    .estado-inactivo { color: #e74c3c; background: rgba(231, 76, 60, 0.1); padding: 4px 10px; border-radius: 15px; font-weight: bold; font-size: 0.75rem; }
+
+    /* --- AJUSTE SOLICITADO: BADGES DE CASO --- */
+    .bg-abierto, .bg-seguimiento, .bg-cerrado { 
+        padding: 5px 12px; 
+        border-radius: 6px; 
+        font-weight: bold; 
+        font-size: 0.75rem; 
+        display: inline-block; 
+        white-space: nowrap; 
+    }
+    .bg-abierto { color: #22543d; background: #e3f9e5; }
+    .bg-seguimiento { color: #744210; background: #feebc8; }
+    .bg-cerrado { color: #822727; background: #fed7d7; }
+
+    /* BOTONES */
+    .btn-sena { padding: 6px 15px; border-radius: 50px; color: white !important; text-decoration: none; font-weight: bold; font-size: 0.75rem; transition: 0.3s; border: none; cursor: pointer; white-space: nowrap; }
+    .btn-sena-edit { background: linear-gradient(135deg, #f09819, #ffc300); }
+    .btn-sena-delete { background: linear-gradient(135deg, #e74c3c, #ff5e62); }
+    .btn-sena-activate { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+    .btn-sena:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+    /* UTILIDADES DE CENTRADO Y ANCHO */
+    .center { text-align: center !important; }
+    .col-ficha { width: 180px; } 
+    .col-consulta { width: 120px; } 
+    .text-muted { color: #718096; font-size: 0.8rem; line-height: 1.2; }
+</style>
+
+<div class="dashboard-area">
+    <div class="actions-header">
+        <h2 style="margin: 0; color: #1a202c;">Atención Individual</h2>
+        <div class="header-tools">
+            <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar...">
+            <a href="{{ url_for('atencion.crear') }}" class="btn-nuevo-modulo">+ Nuevo Registro</a>
+        </div>
+    </div>
+
+    <div class="alerta-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alerta-msg alerta-{{ 'success' if category == 'success' else 'danger' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="table-container">
+        <table class="crud-table" id="tablaDatos">
+            <thead>
+                <tr>
+                    <th class="center">ID</th>
+                    <th>Aprendiz / Documento</th>
+                    <th class="center col-ficha">Ficha</th>
+                    <th>Categoría</th>
+                    <th class="center col-consulta">Consulta</th>
+                    <th>Profesional</th>
+                    <th class="center">Caso</th>
+                    <th class="center">Sistema</th>
+                    <th class="center">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for a in atenciones %}
+                <tr>
+                    <td class="center"><strong>{{ a.id }}</strong></td>
+                    <td>
+                        <div style="font-weight: bold; color: #2d3748;">{{ a.aprendiz.nombres or a.aprendiz.nombre }}</div>
+                        <div class="text-muted">CC {{ a.aprendiz.numero_documento }}</div>
+                    </td>
+                    <td class="center col-ficha">
+                        <div style="font-weight: bold;">{{ a.aprendiz.ficha.codigo if a.aprendiz.ficha else 'N/A' }}</div>
+                        <div class="text-muted">{{ a.aprendiz.ficha.programa[:40] if a.aprendiz.ficha else '' }}</div>
+                    </td>
+                    <td><small style="font-weight: 600;">{{ a.categoria_desercion }}</small></td>
+                    <td class="center col-consulta">
+                        {% if a.fecha_consulta_3 %}
+                            <span class="badge-consulta c3">Consulta 3</span>
+                        {% elif a.fecha_consulta_2 %}
+                            <span class="badge-consulta c2">Consulta 2</span>
+                        {% else %}
+                            <span class="badge-consulta c1">Consulta 1</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <span style="font-weight: 500;">{{ a.profesional.nombre if a.profesional else 'Sin asignar' }}</span>
+                    </td>
+                    <td class="center">
+                        <span class="{{ 'bg-abierto' if a.estado_caso == 'Abierto' else 'bg-seguimiento' if a.estado_caso == 'En Seguimiento' else 'bg-cerrado' }}">
+                            {{ a.estado_caso }}
+                        </span>
+                    </td>
+                    <td class="center">
+                        <span class="{{ 'estado-activo' if a.activo else 'estado-inactivo' }}">
+                            {{ 'Activo' if a.activo else 'Inactivo' }}
+                        </span>
+                    </td>
+                    <td class="center">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <a href="{{ url_for('atencion.editar', id=a.id) }}" class="btn-sena btn-sena-edit">Editar</a>
+                            <form action="{{ url_for('atencion.cambiar_estado', id=a.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn-sena {{ 'btn-sena-delete' if a.activo else 'btn-sena-activate' }}">
+                                    {{ 'Inactivar' if a.activo else 'Activar' }}
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filtrarTabla() {
+        var input = document.getElementById("searchInput").value.toUpperCase();
+        var rows = document.querySelectorAll("#tablaDatos tbody tr");
+        rows.forEach(row => {
+            row.style.display = row.textContent.toUpperCase().includes(input) ? "" : "none";
+        });
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,152 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    .form-container-main {
+        width: 85%;
+        max-width: 850px;
+        min-height: 75vh;
+        margin: 20px auto;
+        background: white;
+        padding: 40px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+        display: flex !important;
+        flex-direction: column !important;
+    }
+    .form-header { border-bottom: 2px solid #f8faff; margin-bottom: 30px; padding-bottom: 15px; text-align: center; }
+    
+    .form-grid { 
+        display: grid !important; 
+        grid-template-columns: 1fr 1fr !important; 
+        gap: 20px 25px !important; 
+    }
+
+    .form-group-fixed {
+        display: flex !important;
+        flex-direction: column !important;
+        align-items: flex-start !important;
+        width: 100% !important;
+        position: relative !important;
+        margin-bottom: 5px !important;
+    }
+
+    .form-group-fixed label { 
+        display: block !important;
+        margin-bottom: 6px !important; 
+        color: #4a5568 !important; 
+        font-weight: bold !important; 
+        font-size: 0.8rem !important; 
+        text-transform: uppercase !important;
+    }
+
+    .form-control-fixed { 
+        width: 100% !important; 
+        padding: 8px 15px !important; 
+        border: 1px solid #e2e8f0 !important; 
+        border-radius: 8px !important; 
+        font-size: 0.9rem !important; 
+        background-color: #fcfcfc !important; 
+        height: 40px !important; 
+        transition: 0.3s;
+        box-sizing: border-box !important;
+    }
+    
+    .form-control-fixed:focus { border-color: #2575FC !important; outline: none !important; box-shadow: 0 0 0 3px rgba(37, 117, 252, 0.1) !important; }
+    
+    .field-error { border-color: #dc3545 !important; background-color: #fff8f8 !important; }
+
+    .error-message { 
+        color: #dc3545 !important; 
+        font-size: 0.75rem !important; 
+        font-weight: 700 !important; 
+        margin-top: 4px !important; 
+        display: block !important;
+        min-height: 1rem;
+    }
+
+    .form-actions { 
+        margin-top: auto; 
+        display: flex; 
+        gap: 15px; 
+        justify-content: center; 
+        border-top: 1px solid #edf2f7; 
+        padding-top: 20px; 
+    }
+
+    .btn-sena-lg { padding: 10px 30px; border-radius: 50px; color: white !important; text-decoration: none; font-weight: bold; font-size: 0.85rem; border: none; cursor: pointer; transition: 0.3s; }
+    .btn-save { background: linear-gradient(135deg, #6A11CB, #2575FC); }
+    .btn-cancel { background: linear-gradient(135deg, #718096, #4a5568); }
+    .btn-sena-lg:hover { transform: translateY(-2px); filter: brightness(1.1); }
+    
+    form { display: flex; flex-direction: column; flex-grow: 1; }
+</style>
+
+<div class="form-container-main">
+    <div class="form-header">
+        <h2 style="margin: 0; color: #1a202c; font-size: 1.4rem;">Editar Usuario</h2>
+    </div>
+
+    <form method="POST" action="{{ url_for('usuarios.editar', id=u.id) }}" novalidate>
+        <div class="form-grid">
+            <div class="form-group-fixed">
+                <label>Nombre Completo</label>
+                <input type="text" name="nombre" 
+                       class="form-control-fixed {% if errors.nombre %}field-error{% endif %}" 
+                       value="{{ u.nombre }}">
+                <span class="error-message">
+                    {% if errors.nombre %}{{ errors.nombre }}{% else %}&#8203;{% endif %}
+                </span>
+            </div>
+
+            <div class="form-group-fixed">
+                <label>Correo Institucional</label>
+                <input type="email" name="email" 
+                       class="form-control-fixed {% if errors.email %}field-error{% endif %}" 
+                       value="{{ u.email }}">
+                <span class="error-message">
+                    {% if errors.email %}{{ errors.email }}{% else %}&#8203;{% endif %}
+                </span>
+            </div>
+
+            <div class="form-group-fixed">
+                <label>Nueva Contraseña (Opcional)</label>
+                <input type="password" name="password" 
+                       placeholder="Dejar vacío para mantener la actual"
+                       class="form-control-fixed {% if errors.password %}field-error{% endif %}">
+                <span class="error-message">
+                    {% if errors.password %}{{ errors.password }}{% else %}&#8203;{% endif %}
+                </span>
+            </div>
+
+            <div class="form-group-fixed">
+                <label>Confirmar Nueva Contraseña</label>
+                <input type="password" name="confirmPassword" 
+                       class="form-control-fixed {% if errors.confirmPassword %}field-error{% endif %}">
+                <span class="error-message">
+                    {% if errors.confirmPassword %}{{ errors.confirmPassword }}{% else %}&#8203;{% endif %}
+                </span>
+            </div>
+
+            <div class="form-group-fixed" style="grid-column: span 2 !important;">
+                <label>Rol</label>
+                <select name="rolId" class="form-control-fixed {% if errors.rolId %}field-error{% endif %}">
+                    {% for r in roles %}
+                        <option value="{{ r }}" {% if u.rol == r %}selected{% endif %}>
+                            {{ r }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <span class="error-message">
+                    {% if errors.rolId %}{{ errors.rolId }}{% else %}&#8203;{% endif %}
+                </span>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-sena-lg btn-save">Actualizar Usuario</button>
+            <a href="{{ url_for('usuarios.listar') }}" class="btn-sena-lg btn-cancel">Cancelar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

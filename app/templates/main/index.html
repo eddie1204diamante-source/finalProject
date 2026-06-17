@@ -1,0 +1,29 @@
+{% extends 'dashboard.html' %}
+
+{% block content %}
+<div class="dashboard-area">
+    <h2 style="margin-bottom: 20px; color: #333;">Resumen del Sistema</h2>
+    
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h4>Total Usuarios</h4>
+            <p class="value">{{ totalUsuarios }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h4>Total Fichas</h4>
+            <p class="value">{{ totalFichas }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h4>Total Aprendices</h4>
+            <p class="value">{{ totalAprendices }}</p>
+        </div>
+
+        <div class="stat-card">
+            <h4>Coordinaciones</h4>
+            <p class="value">{{ totalCoordinaciones }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

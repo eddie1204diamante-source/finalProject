@@ -1,0 +1,177 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* 1. DISTRIBUCIÓN DE LA CABECERA */
+    .actions-header { 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        margin-bottom: 15px; 
+    }
+
+    .header-tools { 
+        display: flex; 
+        gap: 15px; 
+        align-items: center; 
+    }
+
+    /* 2. BUSCADOR Y BOTÓN */
+    .search-input {
+        padding: 10px 20px; 
+        border-radius: 50px; 
+        border: 1px solid #e2e8f0;
+        outline: none; 
+        font-size: 0.9rem; 
+        width: 250px; 
+        transition: all 0.3s ease;
+        background-color: white;
+    }
+
+    .btn-nuevo-coord {
+        background: linear-gradient(135deg, #6A11CB, #2575FC); 
+        color: white !important; 
+        padding: 10px 25px; 
+        border-radius: 50px; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.9rem; 
+        box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3);
+        border: none;
+    }
+
+    /* 3. MENSAJES DE ALERTA */
+    .alerta-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 20px;
+    }
+
+    .alerta-msg { 
+        display: inline-block;
+        font-weight: bold; 
+        font-size: 1rem;
+        padding: 8px 20px;
+        border-radius: 10px;
+    }
+    
+    .alerta-success { color: #27ae60; background: rgba(39, 174, 96, 0.1); }
+    .alerta-danger { color: #e74c3c; background: rgba(231, 76, 60, 0.1); }
+
+    /* 4. CONTENEDOR DE TABLA */
+    .table-container {
+        background: white; 
+        border-radius: 12px; 
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        overflow-x: auto;
+    }
+
+    .crud-table { width: 100%; border-collapse: collapse; }
+    .crud-table th { 
+        background-color: #f8faff; 
+        padding: 15px; 
+        border-bottom: 2px solid #edf2f7;
+        color: #4a5568; 
+        font-size: 0.85rem; 
+        text-transform: uppercase; 
+        text-align: inherit; 
+    }
+    
+    .crud-table td { padding: 15px; border-bottom: 1px solid #edf2f7; font-size: 0.85rem; }
+
+    .estado-activo { color: #2ecc71; font-weight: bold; background: rgba(46, 204, 113, 0.1); padding: 5px 12px; border-radius: 15px; }
+    .estado-inactivo { color: #e74c3c; font-weight: bold; background: rgba(231, 76, 60, 0.1); padding: 5px 12px; border-radius: 15px; }
+
+    /* Botones de acción SENA */
+    .btn-sena {
+        padding: 6px 18px; 
+        border-radius: 50px; 
+        color: white !important; 
+        text-decoration: none; 
+        font-weight: bold; 
+        font-size: 0.8rem;
+        transition: 0.3s;
+        display: inline-block;
+    }
+    .btn-sena:hover { transform: scale(1.05); }
+    .btn-sena-edit { background: linear-gradient(135deg, #f09819, #ffc300); }
+    .btn-sena-delete { background: linear-gradient(135deg, #e74c3c, #ff5e62); }
+    .btn-sena-activate { background: linear-gradient(135deg, #27ae60, #2ecc71); }
+
+    .center { text-align: center !important; }
+</style>
+
+<div class="dashboard-area">
+    <div class="actions-header">
+        <h2 style="margin: 0; color: #1a202c;">Gestión de Coordinaciones</h2>
+        <div class="header-tools">
+            <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar coordinación...">
+            {% if current_user.rol == 'ADMIN' %}
+                <a href="{{ url_for('coordinacion.crear_coordinacion') }}" class="btn-nuevo-coord">+ Nueva Coordinación</a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="alerta-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alerta-msg {{ 'alerta-success' if category == 'success' else 'alerta-danger' }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <div class="table-container">
+        <table class="crud-table" id="tablaDatos">
+            <thead>
+                <tr>
+                    <th class="center" style="width: 80px;">ID</th>
+                    <th style="text-align: left;">NOMBRE DE LA COORDINACIÓN</th>
+                    <th class="center">ESTADO</th> 
+                    {% if current_user.rol == 'ADMIN' %}
+                        <th class="center">ACCIONES</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for c in coordinaciones %}
+                <tr>
+                    <td class="center" style="font-weight: bold;">{{ c.id }}</td>
+                    <td style="font-weight: bold; color: #2d3748;">{{ c.nombre }}</td>
+                    <td class="center">
+                        <span class="{{ 'estado-activo' if c.activo else 'estado-inactivo' }}">
+                            {{ 'Activo' if c.activo else 'Inactivo' }}
+                        </span>
+                    </td>
+                    {% if current_user.rol == 'ADMIN' %}
+                    <td class="center">
+                        <div style="display: flex; gap: 8px; justify-content: center;">
+                            <a href="{{ url_for('coordinacion.editar_coordinacion', id=c.id) }}" class="btn-sena btn-sena-edit">Editar</a>
+                            <a href="{{ url_for('coordinacion.cambiar_estado', id=c.id) }}" 
+                               class="btn-sena {{ 'btn-sena-delete' if c.activo else 'btn-sena-activate' }}">
+                                {{ 'Inactivar' if c.activo else 'Activar' }}
+                            </a>
+                        </div>
+                    </td>
+                    {% endif %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function filtrarTabla() {
+        var input = document.getElementById("searchInput").value.toUpperCase();
+        var tr = document.querySelectorAll("#tablaDatos tbody tr");
+        tr.forEach(row => {
+            row.style.display = row.textContent.toUpperCase().includes(input) ? "" : "none";
+        });
+    }
+</script>
+{% endblock %}

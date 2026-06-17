@@ -1,0 +1,276 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* FORMATO CSS ESTÁNDAR NEXUS - PROHIBIDO CAMBIAR */
+    .form-container, .form-container * { box-sizing: border-box; }
+    
+    .form-container { 
+        background: white; 
+        border-radius: 15px; 
+        padding: 30px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+        max-width: 1000px; 
+        margin: 0 auto; 
+        width: 100%; 
+    }
+    
+    .form-title { font-weight: 800; color: #1a202c; margin-bottom: 25px; }
+    
+    .input-nexus { 
+        width: 100%; 
+        padding: 12px 15px; 
+        border-radius: 10px; 
+        border: 1px solid #e2e8f0; 
+        outline: none; 
+        transition: 0.3s; 
+        font-size: 0.9rem; 
+        background: #fff; 
+    }
+    
+    .input-nexus:focus { 
+        border-color: #2575FC; 
+        box-shadow: 0 0 0 3px rgba(37,117,252,0.1); 
+    }
+    
+    .msg-exito { color: #27ae60; font-weight: bold; margin-bottom: 15px; display: block; }
+    .msg-error { color: #e74c3c; font-weight: bold; margin-bottom: 15px; display: block; }
+    
+    .error-campo { 
+        color: #e74c3c; 
+        font-size: 0.75rem; 
+        font-weight: bold; 
+        margin-top: 5px; 
+        display: block; 
+    }
+
+    .info-card { 
+        background: #f8faff; 
+        border-left: 5px solid #2575FC; 
+        padding: 20px; 
+        border-radius: 12px; 
+        margin-bottom: 25px; 
+        width: 100%; 
+    }
+    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .info-item { display: flex; flex-direction: column; overflow: hidden; }
+    .info-label { font-size: 0.7rem; text-transform: uppercase; color: #718096; font-weight: 800; margin-bottom: 2px; }
+    .info-value { color: #2d3748; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .grid-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+    .full-width { grid-column: span 3; }
+    .half-width { grid-column: span 2; }
+    
+    label { display: block; margin-bottom: 6px; font-weight: 700; color: #4a5568; font-size: 0.85rem; }
+    textarea.input-nexus { height: 80px; resize: vertical; }
+
+    .consulta-card { padding: 15px; border-radius: 12px; margin-top: 10px; border: 1px solid #edf2f7; }
+    .c1 { background: #f0f7ff; border-left: 5px solid #2575FC; }
+    .c2 { background: #f9f0ff; border-left: 5px solid #6A11CB; }
+    .c3 { background: #f0fff4; border-left: 5px solid #27ae60; }
+    .consulta-title { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 10px; color: #4a5568; }
+
+    .btn-nexus-form { 
+        background: linear-gradient(135deg, #2575FC, #6A11CB); 
+        color: white !important; 
+        padding: 12px 30px; 
+        border-radius: 50px; 
+        border: none; 
+        font-weight: bold; 
+        cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-nexus-form:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,117,252,0.2); }
+
+    .btn-cancelar { 
+        color: #718096; 
+        text-decoration: none; 
+        font-weight: 700; 
+        padding: 12px 25px; 
+        border-radius: 50px; 
+        border: 1px solid #e2e8f0;
+        transition: 0.3s; 
+        display: inline-block;
+        text-align: center;
+    }
+</style>
+
+<div class="dashboard-area">
+    <div class="form-container">
+        <h2 class="form-title">Editar Seguimiento de Atención</h2>
+
+        <div style="text-align: center;">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="{{ 'msg-exito' if category == 'success' else 'msg-error' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        <div class="info-card">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Aprendiz</span>
+                    <span class="info-value">{{ aprendiz.nombres or aprendiz.nombre }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Documento</span>
+                    <span class="info-value">{{ aprendiz.numero_documento or aprendiz.documento }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ficha / Programa</span>
+                    <span class="info-value">{{ aprendiz.ficha.codigo if aprendiz.ficha else 'N/A' }} - {{ aprendiz.ficha.programa if aprendiz.ficha else '' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Correo</span>
+                    <span class="info-value">{{ aprendiz.email }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Edad</span>
+                    <span class="info-value">{{ aprendiz.edad }} años</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono</span>
+                    <span class="info-value">{{ aprendiz.telefono }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form method="POST" action="{{ url_for('atencion.editar', id=atencion.id) }}" novalidate>
+            <div class="grid-fields">
+                <div class="half-width">
+                    <label>Profesional Responsable *</label>
+                    <select name="usuario_id" class="input-nexus">
+                        {% for p in profesionales %}
+                            <option value="{{ p.id }}" {% if (request.form.get('usuario_id')|int or atencion.usuario_id) == p.id %}selected{% endif %}>{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    {% if errors and errors.usuario_id %}<span class="error-campo">{{ errors.usuario_id }}</span>{% endif %}
+                </div>
+                <div>
+                    <label>Estado del Caso *</label>
+                    <select name="estado_caso" class="input-nexus">
+                        {% set e_val = request.form.get('estado_caso') or atencion.estado_caso %}
+                        <option value="Abierto" {% if e_val == 'Abierto' %}selected{% endif %}>Abierto</option>
+                        <option value="En Seguimiento" {% if e_val == 'En Seguimiento' %}selected{% endif %}>En Seguimiento</option>
+                        <option value="Cerrado" {% if e_val == 'Cerrado' %}selected{% endif %}>Cerrado</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label>Categoría Deserción *</label>
+                    <select name="categoria_desercion" class="input-nexus">
+                        {% set cat_val = request.form.get('categoria_desercion') or atencion.categoria_desercion %}
+                        <option value="Riesgo Académico" {% if cat_val == 'Riesgo Académico' %}selected{% endif %}>Riesgo Académico</option>
+                        <option value="Riesgo Económico" {% if cat_val == 'Riesgo Económico' %}selected{% endif %}>Riesgo Económico</option>
+                        <option value="Salud" {% if cat_val == 'Salud' %}selected{% endif %}>Salud</option>
+                        <option value="Personal/Familiar" {% if cat_val == 'Personal/Familiar' %}selected{% endif %}>Personal/Familiar</option>
+                    </select>
+                </div>
+                <div>
+                    <label>Remitido Por *</label>
+                    <input type="text" name="remitido_por" class="input-nexus" value="{{ request.form.get('remitido_por') or atencion.remitido_por or '' }}">
+                    {% if errors and errors.remitido_por %}<span class="error-campo">{{ errors.remitido_por }}</span>{% endif %}
+                </div>
+                <div>
+                    <label>Atención Familiar (Menores)</label>
+                    <input type="text" id="atencionFamiliar" name="atencion_familiar" class="input-nexus" value="{{ request.form.get('atencion_familiar') or atencion.atencion_familiar or '' }}">
+                    <input type="hidden" id="edadAprendiz" value="{{ aprendiz.edad }}">
+                </div>
+
+                <div class="full-width consulta-card c1">
+                    <div class="consulta-title">Primera Consulta (Obligatoria)</div>
+                    <div class="grid-fields">
+                        <div>
+                            <label>Fecha Consulta 1 *</label>
+                            <input type="date" name="fecha_consulta_1" class="input-nexus" value="{{ request.form.get('fecha_consulta_1') or atencion.fecha_consulta_1 }}">
+                            {% if errors and errors.fecha_consulta_1 %}<span class="error-campo">{{ errors.fecha_consulta_1 }}</span>{% endif %}
+                        </div>
+                        <div class="half-width">
+                            <label>Observaciones 1 *</label>
+                            <textarea name="observaciones_1" class="input-nexus">{{ request.form.get('observaciones_1') or atencion.observaciones_1 or '' }}</textarea>
+                            {% if errors and errors.observaciones_1 %}<span class="error-campo">{{ errors.observaciones_1 }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="full-width consulta-card c2">
+                    <div class="consulta-title">Segunda Consulta (Seguimiento)</div>
+                    <div class="grid-fields">
+                        <div>
+                            <label>Fecha Consulta 2</label>
+                            <input type="date" name="fecha_consulta_2" class="input-nexus" value="{{ request.form.get('fecha_consulta_2') or (atencion.fecha_consulta_2 if atencion.fecha_consulta_2 else '') }}">
+                            {% if errors and errors.fecha_consulta_2 %}<span class="error-campo">{{ errors.fecha_consulta_2 }}</span>{% endif %}
+                        </div>
+                        <div class="half-width">
+                            <label>Observaciones 2</label>
+                            <textarea name="observaciones_2" class="input-nexus">{{ request.form.get('observaciones_2') or atencion.observaciones_2 or '' }}</textarea>
+                            {% if errors and errors.observaciones_2 %}<span class="error-campo">{{ errors.observaciones_2 }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="full-width consulta-card c3">
+                    <div class="consulta-title">Tercera Consulta (Cierre)</div>
+                    <div class="grid-fields">
+                        <div>
+                            <label>Fecha Consulta 3</label>
+                            <input type="date" name="fecha_consulta_3" class="input-nexus" value="{{ request.form.get('fecha_consulta_3') or (atencion.fecha_consulta_3 if atencion.fecha_consulta_3 else '') }}">
+                            {% if errors and errors.fecha_consulta_3 %}<span class="error-campo">{{ errors.fecha_consulta_3 }}</span>{% endif %}
+                        </div>
+                        <div class="half-width">
+                            <label>Observaciones 3</label>
+                            <textarea name="observaciones_3" class="input-nexus">{{ request.form.get('observaciones_3') or atencion.observaciones_3 or '' }}</textarea>
+                            {% if errors and errors.observaciones_3 %}<span class="error-campo">{{ errors.observaciones_3 }}</span>{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 20px;">
+                <button type="submit" class="btn-nexus-form" style="flex: 2;">Actualizar Registro</button>
+                <a href="{{ url_for('atencion.listar') }}" class="btn-cancelar" style="flex: 1;">Cancelar</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const edadElement = document.getElementById("edadAprendiz");
+        const inputFamiliar = document.getElementById("atencionFamiliar");
+        if (edadElement && inputFamiliar) {
+            const edad = parseInt(edadElement.value);
+            if (edad >= 18) {
+                inputFamiliar.disabled = true;
+                inputFamiliar.value = ""; 
+                inputFamiliar.placeholder = "No aplica (Mayor de edad)";
+                inputFamiliar.style.background = "#f7fafc";
+            }
+        }
+    });
+    const form = document.querySelector("form");
+
+form.addEventListener("submit", function(e){
+
+    const fecha2 = document.querySelector('[name="fecha_consulta_2"]').value;
+    const fecha3 = document.querySelector('[name="fecha_consulta_3"]').value;
+
+    if(fecha2 && fecha3 && fecha3 < fecha2){
+        e.preventDefault();
+
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "La fecha de cierre no puede ser anterior al último seguimiento"
+        });
+
+        return false;
+    }
+});
+</script>
+{% endblock %}

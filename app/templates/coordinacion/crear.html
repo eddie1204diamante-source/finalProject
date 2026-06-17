@@ -1,0 +1,128 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* Estilos del Contenedor del Formulario */
+    .form-card {
+        background: white; 
+        padding: 30px; 
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+        max-width: 600px; 
+        margin: 0 auto;
+    }
+    .form-group { margin-bottom: 20px; }
+    
+    .form-control {
+        width: 100%; 
+        padding: 12px; 
+        border-radius: 8px;
+        border: 1px solid #e2e8f0; 
+        outline: none;
+        transition: border 0.3s;
+    }
+    .form-control:focus { border-color: #2575FC; }
+
+    /* --- ESTILOS DE LA BOTONERA SENA --- */
+    .botonera-container {
+        display: flex; 
+        gap: 15px; 
+        justify-content: center; 
+        margin-top: 30px;
+    }
+
+    .btn-sena-save {
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white !important; 
+        border: none; 
+        padding: 12px 30px;
+        border-radius: 50px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        font-size: 1rem;
+        transition: box-shadow 0.3s ease;
+        text-decoration: none; 
+        box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3); 
+    }
+    .btn-sena-save:hover {
+        box-shadow: 0 6px 15px rgba(37, 117, 252, 0.5); 
+    }
+
+    .btn-sena-cancel {
+        background-color: #f1f1f1; 
+        color: #555 !important; 
+        border: none; 
+        padding: 12px 30px;
+        border-radius: 50px; 
+        font-weight: bold; 
+        cursor: pointer; 
+        font-size: 1rem;
+        text-decoration: none; 
+        transition: background-color 0.3s ease;
+    }
+    .btn-sena-cancel:hover {
+        background-color: #e5e5e5; 
+    }
+
+    .alerta-container {
+        width: 100%;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    .alerta-msg { 
+        display: inline-block;
+        font-weight: bold; 
+        font-size: 0.9rem;
+        padding: 10px;
+        border-radius: 8px;
+        width: 100%; 
+    }
+    .alerta-danger { 
+        color: #e74c3c; 
+        background: rgba(231, 76, 60, 0.1); 
+    }
+</style>
+
+<div class="dashboard-area">
+    <h2 style="text-align: center; color: #1a202c; margin-bottom: 25px;">Registrar Coordinación</h2>
+    
+    <div class="form-card">
+        
+        <div class="alerta-container">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        {# Se cambió para que use la clase dinámica por si acaso mandas un 'success' #}
+                        <div class="alerta-msg {{ 'alerta-danger' if category == 'danger' else 'alerta-success' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+        </div>
+
+        {# EL ACTION SE MANTIENE IGUAL PORQUE url_for DETECTA EL CAMBIO AUTOMÁTICAMENTE #}
+        <form method="POST" action="{{ url_for('coordinacion.crear_coordinacion') }}" novalidate>
+            <div class="form-group">
+                <label style="font-weight: bold; display: block; margin-bottom: 8px;">Nombre de la Coordinación</label>
+                <input type="text" name="nombre" class="form-control" 
+                       placeholder="Ej: Teleinformática y Sistemas" 
+                       value="{{ request.form.get('nombre', '') }}"
+                       oninput="this.value = this.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ ]/g, '')">
+                <small style="color: #718096; display: block; margin-top: 5px;">Mínimo 5 caracteres, solo letras.</small>
+            </div>
+
+            <div class="botonera-container">
+                {# AJUSTE: El enlace de cancelar ahora apunta a la ruta limpia '/' #}
+                <a href="{{ url_for('coordinacion.listar_coordinaciones') }}" class="btn-sena-cancel">
+                     Cancelar
+                </a>
+
+                <button type="submit" class="btn-sena-save">
+                     Guardar Coordinación
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

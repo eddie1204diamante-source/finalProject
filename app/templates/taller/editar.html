@@ -1,0 +1,185 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+
+    .form-container-main {
+        width: 85%;
+        max-width: 850px;
+        margin: 30px auto;
+        background: #ffffff;
+        padding: 30px 35px 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02);
+        transition: all 0.2s;
+    }
+    .form-header {
+        text-align: center;
+        margin-bottom: 30px;
+        border-bottom: 2px solid #eef2f6;
+        padding-bottom: 15px;
+    }
+    .form-header h2 {
+        margin: 0;
+        font-size: 1.8rem;
+        color: #1e2a3e;
+        font-weight: 600;
+        letter-spacing: -0.3px;
+    }
+    .form-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px 25px;
+    }
+    .form-group-fixed {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        margin-bottom: 5px;
+    }
+    .form-group-fixed label {
+        margin-bottom: 8px;
+        color: #334155;
+        font-weight: 600;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    .form-control-fixed {
+        width: 100%;
+        padding: 12px 14px;
+        border: 1px solid #cbd5e1;
+        border-radius: 12px;
+        font-size: 0.9rem;
+        background: #fff;
+        transition: all 0.2s;
+        box-sizing: border-box;
+    }
+    .form-control-fixed:focus {
+        outline: none;
+        border-color: #f59e0b;
+        box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
+    }
+    textarea.form-control-fixed {
+        resize: vertical;
+        min-height: 90px;
+    }
+    .form-actions {
+        margin-top: 30px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        border-top: 1px solid #eef2f6;
+        padding-top: 25px;
+    }
+    .btn-sena-lg {
+        padding: 10px 28px;
+        border-radius: 40px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border: none;
+        cursor: pointer;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-block;
+    }
+    .btn-save {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: white;
+        box-shadow: 0 2px 5px rgba(245,158,11,0.2);
+    }
+    .btn-save:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 12px rgba(245,158,11,0.3);
+    }
+    .btn-cancel {
+        background: #f1f5f9;
+        color: #475569;
+    }
+    .btn-cancel:hover {
+        background: #e2e8f0;
+        transform: translateY(-2px);
+    }
+    @media (max-width: 640px) {
+        .form-grid { grid-template-columns: 1fr; }
+        .form-container-main { padding: 20px; }
+    }
+</style>
+
+<div class="form-container-main">
+    <div class="form-header">
+        <h2>✏️ Editando Taller: {{ taller.nombre }}</h2>
+        <p style="color: #64748b; margin-top: 8px;">Modifica los datos del taller</p>
+    </div>
+
+    <form method="POST" action="{{ url_for('talleres.editar', id=taller.id) }}" id="formEditar">
+        <div class="form-grid">
+            <div class="form-group-fixed" style="grid-column: span 2;">
+                <label>🏷️ Nombre del Taller *</label>
+                <input type="text" name="nombre" class="form-control-fixed" value="{{ taller.nombre }}" required minlength="3">
+            </div>
+
+            <div class="form-group-fixed">
+                <label>👩‍🏫 Instructor Responsable *</label>
+                <select name="instructor" class="form-control-fixed" required>
+                    {% for ins in instructores %}
+                        {% set nombre_completo = ins.nombres + " " + ins.apellidos %}
+                        <option value="{{ nombre_completo }}" {% if nombre_completo == taller.instructor %}selected{% endif %}>
+                            {{ nombre_completo }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="form-group-fixed">
+                <label>📅 Fecha Programada *</label>
+                <input type="date" name="fecha_programada" class="form-control-fixed" 
+                       value="{{ taller.fecha_programada.strftime('%Y-%m-%d') }}" required min="{{ hoy }}">
+            </div>
+
+            <div class="form-group-fixed" style="grid-column: span 2;">
+                <label>📝 Descripción / Objetivos</label>
+                <textarea name="descripcion" class="form-control-fixed" maxlength="5000">{{ taller.descripcion }}</textarea>
+            </div>
+
+            <div class="form-group-fixed" style="grid-column: span 2;">
+                <label>⚙️ Estado del Taller</label>
+                <select name="estado" class="form-control-fixed">
+                    <option value="Programado" {% if taller.estado == 'Programado' %}selected{% endif %}>🟢 Programado</option>
+                    <option value="Realizado" {% if taller.estado == 'Realizado' %}selected{% endif %}>🔵 Realizado</option>
+                    <option value="Cancelado" {% if taller.estado == 'Cancelado' %}selected{% endif %}>🔴 Cancelado</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn-sena-lg btn-save">💾 Actualizar Taller</button>
+            <a href="{{ url_for('talleres.index') }}" class="btn-sena-lg btn-cancel">🗙 Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    document.getElementById('formEditar').addEventListener('submit', function(e) {
+        let fecha = document.querySelector('input[name="fecha_programada"]').value;
+        let hoy = new Date().toISOString().split('T')[0];
+        let estado = document.querySelector('select[name="estado"]').value;
+        let nombre = document.querySelector('input[name="nombre"]').value.trim();
+        if (nombre.length < 3) {
+            alert('El nombre debe tener al menos 3 caracteres.');
+            e.preventDefault();
+            return;
+        }
+        if (fecha < hoy && estado === 'Programado') {
+            alert('No se puede programar un taller con fecha pasada.');
+            e.preventDefault();
+            return;
+        }
+        if (fecha > hoy && estado === 'Realizado') {
+            alert('No se puede marcar como Realizado un taller con fecha futura.');
+            e.preventDefault();
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,310 @@
+{% extends "dashboard.html" %}
+
+{% block content %}
+<style>
+    /* Reset de box-sizing para que nada se salga */
+    .form-container, .form-container * { box-sizing: border-box; }
+    
+    .form-container { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1000px; margin: 0 auto; width: 100%; }
+    .form-title { font-weight: 800; color: #1a202c; margin-bottom: 25px; }
+    
+    .search-box { display: flex; gap: 10px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #edf2f7; }
+    .input-nexus { width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; font-size: 0.9rem; background: #fff; }
+    .input-nexus:focus { border-color: #2575FC; box-shadow: 0 0 0 3px rgba(37,117,252,0.1); }
+    
+    /* ALERTAS (MENSAJES FLASH) */
+    .alert { 
+        padding: 15px 20px; 
+        margin-bottom: 20px; 
+        border-radius: 12px; 
+        font-weight: 700; 
+        font-size: 0.9rem;
+        border: 1px solid transparent;
+        animation: slideIn 0.3s ease-out;
+    }
+    .alert-success { background-color: #f0fff4; color: #38a169; border-color: #9ae6b4; }
+    .alert-danger { background-color: #fff5f5; color: #e53e3e; border-color: #feb2b2; }
+    .alert-warning { background-color: #fffaf0; color: #9c4221; border-color: #feebc8; }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+
+    .input-error { border-color: #fc8181 !important; background-color: #fff5f5 !important; }
+    .error-msg { color: #e53e3e; font-size: 0.75rem; font-weight: 700; margin-top: 4px; display: none; }
+
+    /* Banner de Información */
+    .info-card { background: #f8faff; border-left: 5px solid #6A11CB; padding: 20px; border-radius: 12px; margin-bottom: 25px; width: 100%; }
+    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
+    .info-item { display: flex; flex-direction: column; overflow: hidden; }
+    .info-label { font-size: 0.7rem; text-transform: uppercase; color: #718096; font-weight: 800; margin-bottom: 2px; }
+    .info-value { color: #2d3748; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    /* Layout del Formulario */
+    .grid-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+    .full-width { grid-column: span 3; }
+    .half-width { grid-column: span 2; }
+    
+    label { display: block; margin-bottom: 6px; font-weight: 700; color: #4a5568; font-size: 0.85rem; }
+    textarea.input-nexus { height: 80px; resize: vertical; min-height: 60px; }
+
+    .btn-nexus-form { 
+        background: linear-gradient(135deg, #6A11CB, #2575FC); color: white !important; 
+        padding: 12px 30px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer;
+        transition: 0.3s;
+    }
+    .btn-nexus-form:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,117,252,0.2); }
+
+    .btn-cancelar { 
+        color: #718096; text-decoration: none; font-weight: 700; 
+        padding: 12px 25px; border-radius: 50px; border: 1px solid #e2e8f0;
+        transition: 0.3s; display: inline-block;
+    }
+    .btn-cancelar:hover { background: #f7fafc; color: #2d3748; border-color: #cbd5e0; }
+</style>
+
+<div class="dashboard-area">
+    <div class="form-container">
+        <h2 class="form-title">Programar Nuevo Comité</h2>
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+            {% for category, message in messages %}
+              <div class="alert alert-{{ category if category != 'error' else 'danger' }}">
+                {{ message }}
+              </div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form method="GET" action="{{ url_for('comite.crear') }}" class="search-box">
+            <input type="text" name="documento" class="input-nexus" placeholder="Documento del aprendiz..." value="{{ documento or '' }}" required>
+            <button type="submit" class="btn-nexus-form">Buscar</button>
+        </form>
+
+        {% if aprendiz %}
+        <div class="info-card">
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Nombre Completo</span>
+                    <span class="info-value">{{ aprendiz.nombres }} {{ aprendiz.apellidos }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Documento</span>
+                    <span class="info-value">{{ aprendiz.numero_documento }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Ficha</span>
+                    <span class="info-value">{{ aprendiz.ficha.codigo if aprendiz.ficha else 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Edad</span>
+                    <span class="info-value">{{ aprendiz.edad or 'N/A' }} años</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Correo</span>
+                    <span class="info-value">{{ aprendiz.email or 'N/A' }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Teléfono</span>
+                    <span class="info-value">{{ aprendiz.telefono or 'N/A' }}</span>
+                </div>
+                <div class="info-item full-width" style="border-top: 1px solid #edf2f7; padding-top: 10px; margin-top: 5px;">
+                    <span class="info-label">Coordinación</span>
+                    <span class="info-value">{{ aprendiz.ficha.coordinacion.nombre if (aprendiz.ficha and aprendiz.ficha.coordinacion) else 'No asignada' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <form id="comiteForm" method="POST" action="{{ url_for('comite.crear') }}" novalidate>
+            <input type="hidden" name="aprendiz_id" value="{{ aprendiz.id }}">
+            <input type="hidden" name="ficha_id" value="{{ aprendiz.ficha_id }}">
+            <input type="hidden" name="coordinacion_id" value="{{ aprendiz.ficha.coordinacion_id if (aprendiz.ficha and aprendiz.ficha.coordinacion_id) else '' }}">
+            
+            <div class="grid-fields">
+                <div>
+                    <label>Fecha Citación *</label>
+                    <input type="date" name="fecha" id="fecha" class="input-nexus" required>
+                    <span class="error-msg">Este campo es requerido</span>
+                </div>
+                <div>
+                    <label>Hora (08:00 - 17:00) *</label>
+                    <input type="time" name="hora" id="hora" class="input-nexus" required>
+                    <span class="error-msg" id="error-hora">Fuera de horario</span>
+                </div>
+                <div>
+                    <label>Tipo de Falta *</label>
+                    <select name="tipo_falta" class="input-nexus" required>
+                        <option value="">Seleccione...</option>
+                        <option value="ACADÉMICA">Académica</option>
+                        <option value="DISCIPLINARIA">Disciplinaria</option>
+                    </select>
+                    <span class="error-msg">Seleccione una opción</span>
+                </div>
+
+                <div>
+                    <label>Sede *</label>
+                    <input type="text" name="sede" class="input-nexus" placeholder="Sede" required>
+                    <span class="error-msg">Campo requerido</span>
+                </div>
+                <div>
+                    <label>Piso / Bloque *</label>
+                    <input type="text" name="piso" class="input-nexus" placeholder="Piso" required>
+                    <span class="error-msg">Campo requerido</span>
+                </div>
+                <div>
+                    <label>Ambiente *</label>
+                    <input type="text" name="ambiente" class="input-nexus" placeholder="Ambiente" required>
+                    <span class="error-msg">Campo requerido</span>
+                </div>
+
+                <div class="half-width">
+                    <label>Instructor que reporta *</label>
+                    <select name="instructor_id" class="input-nexus" required>
+                        <option value="">Seleccione Instructor...</option>
+                        {% for i in instructores %}
+                            <option value="{{ i.id }}">{{ i.nombres }} {{ i.apellidos }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="error-msg">Debe elegir un instructor</span>
+                </div>
+
+                <div>
+                    <label>Profesional Bienestar *</label>
+                    <select name="profesional_bienestar" class="input-nexus" required>
+                        <option value="">Seleccione...</option>
+                        {% for p in profesionales %}
+                            <option value="{{ p.id }}">{{ p.nombre }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="error-msg">Campo requerido</span>
+                </div>
+
+                <div style="display: flex; align-items: center; padding-top: 20px;">
+                    <label style="display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
+                        <input type="checkbox" name="paz_salvo" style="width: 18px; height: 18px;"> 
+                        <span>¿Paz y Salvo?</span>
+                    </label>
+                </div>
+
+                <div class="full-width">
+                    <label>Motivo de la falta *</label>
+                    <textarea name="motivo" class="input-nexus" required placeholder="Escriba el motivo aquí..."></textarea>
+                    <span class="error-msg">Debe completar el motivo de la falta</span>
+                </div>
+
+                <div class="full-width">
+                    <label>Recomendación del Comité *</label>
+                    <textarea name="recomendacion" class="input-nexus" required placeholder="Escriba la recomendación..."></textarea>
+                    <span class="error-msg">Este campo es obligatorio</span>
+                </div>
+
+                <div class="full-width">
+                    <label>Plan de Mejoramiento *</label>
+                    <textarea name="plan_mejoramiento" class="input-nexus" required placeholder="Escriba el plan..."></textarea>
+                    <span class="error-msg">Debe describir el plan de mejoramiento</span>
+                </div>
+
+                <div class="half-width">
+                    <label>Representante de Aprendices (Vocero)</label>
+                    <input type="text" name="representante_aprendices" class="input-nexus" value="{{ vocero.nombres + ' ' + vocero.apellidos if vocero else 'Sin vocero asignado' }}" readonly>
+                </div>
+                
+                <div>
+                    <label>Fecha Plazo Plan *</label>
+                    <input type="date" name="fecha_plazo" class="input-nexus" required>
+                    <span class="error-msg">Campo requerido</span>
+                </div>
+
+                <div class="full-width">
+                    <label>Observaciones Finales *</label>
+                    <textarea name="observaciones" class="input-nexus" style="height: 60px;" required placeholder="Escriba las observaciones..."></textarea>
+                    <span class="error-msg">Debe escribir las observaciones finales</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 30px; display: flex; gap: 20px; align-items: center;">
+                <button type="submit" class="btn-nexus-form" style="flex: 2;">Registrar Comité</button>
+                <a href="{{ url_for('comite.listar') }}" class="btn-cancelar" style="flex: 1; text-align: center;">Cancelar</a>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fechaInput = document.getElementById('fecha');
+    
+    // --- LÓGICA DE RESTRICCIÓN DE FECHA ---
+    const hoy = new Date();
+    const anio = hoy.getFullYear();
+    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+    
+    const fechaMaxima = `${anio}-${mes}-20`;
+    fechaInput.setAttribute('max', fechaMaxima);
+    const fechaMinima = `${anio}-${mes}-01`;
+    fechaInput.setAttribute('min', fechaMinima);
+
+    // Auto-cerrar alertas flash
+    setTimeout(function() {
+        let alerts = document.querySelectorAll('.alert');
+        alerts.forEach(alert => {
+            alert.style.transition = "opacity 0.5s ease";
+            alert.style.opacity = "0";
+            setTimeout(() => alert.remove(), 500);
+        });
+    }, 5000);
+
+    const form = document.getElementById('comiteForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+            
+            document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+
+            this.querySelectorAll('[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('input-error');
+                    let errorSpan = input.parentNode.querySelector('.error-msg');
+                    if(errorSpan) errorSpan.style.display = 'block';
+                }
+            });
+
+            if (fechaInput.value) {
+                const fechaSeleccionada = new Date(fechaInput.value + 'T00:00:00');
+                const diaSemana = fechaSeleccionada.getDay();
+                if (diaSemana === 0 || diaSemana === 6) {
+                    isValid = false;
+                    fechaInput.classList.add('input-error');
+                    alert("¡Atención! Los comités no pueden programarse los fines de semana.");
+                }
+            }
+
+            const horaInput = document.getElementById('hora');
+            if (horaInput.value) {
+                const horaCerrada = parseInt(horaInput.value.split(':')[0]);
+                if (horaCerrada < 8 || horaCerrada >= 17) {
+                    isValid = false;
+                    horaInput.classList.add('input-error');
+                    const errorHora = document.getElementById('error-hora');
+                    errorHora.textContent = "Horario permitido: 08:00 AM - 05:00 PM";
+                    errorHora.style.display = 'block';
+                }
+            }
+
+            if (!isValid) {
+                e.preventDefault();
+                const firstError = document.querySelector('.input-error');
+                if (firstError) {
+                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

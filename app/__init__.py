@@ -21,7 +21,13 @@ def create_app():
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+    # Configuración desde variables de entorno
+    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('MYSQL_URL')
 
+    print("MYSQL_URL =", os.getenv('MYSQL_URL'))
+    print("SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])
+
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
     mail.init_app(app)
 

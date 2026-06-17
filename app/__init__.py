@@ -22,7 +22,12 @@ def create_app():
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
     # Configuración desde variables de entorno
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('MYSQL_URL')
+    mysql_url = os.getenv('MYSQL_URL')
+
+    if mysql_url:
+        mysql_url = mysql_url.replace("mysql://", "mysql+pymysql://", 1)
+
+    app.config['SQLALCHEMY_DATABASE_URI'] = mysql_url
 
     print("MYSQL_URL =", os.getenv('MYSQL_URL'))
     print("SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])

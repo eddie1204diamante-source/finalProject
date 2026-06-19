@@ -121,12 +121,17 @@
 
             <div class="form-group-fixed">
                 <label>👩‍🏫 Instructor Responsable *</label>
-                <select name="instructor" class="form-control-fixed" required>
+                <select name="instructor_id" class="form-control-fixed" required>
                     <option value="" disabled selected>-- Seleccione Instructor --</option>
                     {% for ins in instructores %}
-                        <option value="{{ ins.nombres }} {{ ins.apellidos }}">{{ ins.nombres }} {{ ins.apellidos }}</option>
+                        <option value="{{ ins.id }}">{{ ins.nombres }} {{ ins.apellidos }}</option>
                     {% endfor %}
                 </select>
+            </div>
+
+            <div class="form-group-fixed">
+                <label>👥 Aforo *</label>
+                <input type="number" name="aforo" class="form-control-fixed" min="1" max="1000" value="1" required>
             </div>
 
             <div class="form-group-fixed">
@@ -149,17 +154,27 @@
 
 <script>
     document.getElementById('formCrear').addEventListener('submit', function(e) {
-        let nombre = document.querySelector('input[name="nombre"]').value.trim();
+        const nombre = document.querySelector('input[name="nombre"]').value.trim();
+        const aforo = parseInt(document.querySelector('input[name="aforo"]').value, 10);
+        const fecha = document.querySelector('input[name="fecha_programada"]').value;
+        const hoy = new Date().toISOString().split('T')[0];
+
         if (nombre.length < 3) {
             alert('El nombre debe tener al menos 3 caracteres.');
             e.preventDefault();
             return;
         }
-        let fecha = document.querySelector('input[name="fecha_programada"]').value;
-        let hoy = new Date().toISOString().split('T')[0];
+
+        if (!aforo || aforo < 1) {
+            alert('El aforo debe ser mayor a 0.');
+            e.preventDefault();
+            return;
+        }
+
         if (fecha < hoy) {
             alert('La fecha no puede ser anterior a hoy.');
             e.preventDefault();
+            return;
         }
     });
 </script>

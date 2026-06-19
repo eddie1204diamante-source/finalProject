@@ -2,7 +2,6 @@
 
 {% block content %}
 <style>
-
     .form-container-main {
         width: 85%;
         max-width: 850px;
@@ -117,30 +116,35 @@
         <div class="form-grid">
             <div class="form-group-fixed" style="grid-column: span 2;">
                 <label>🏷️ Nombre del Taller *</label>
-                <input type="text" name="nombre" class="form-control-fixed" value="{{ taller.nombre }}" required minlength="3">
+                <input type="text" name="nombre" class="form-control-fixed" value="{{ taller.nombre }}" required minlength="3" pattern=".*\S.*">
             </div>
 
             <div class="form-group-fixed">
                 <label>👩‍🏫 Instructor Responsable *</label>
-                <select name="instructor" class="form-control-fixed" required>
+                <select name="instructor_id" class="form-control-fixed" required>
+                    <option value="" disabled>-- Seleccione Instructor --</option>
                     {% for ins in instructores %}
-                        {% set nombre_completo = ins.nombres + " " + ins.apellidos %}
-                        <option value="{{ nombre_completo }}" {% if nombre_completo == taller.instructor %}selected{% endif %}>
-                            {{ nombre_completo }}
+                        <option value="{{ ins.id }}" {% if ins.id == taller.instructor_id %}selected{% endif %}>
+                            {{ ins.nombres }} {{ ins.apellidos }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="form-group-fixed">
+                <label>👥 Aforo *</label>
+                <input type="number" name="aforo" class="form-control-fixed" min="1" max="1000" value="{{ taller.aforo }}" required>
+            </div>
+
+            <div class="form-group-fixed">
                 <label>📅 Fecha Programada *</label>
-                <input type="date" name="fecha_programada" class="form-control-fixed" 
+                <input type="date" name="fecha_programada" class="form-control-fixed"
                        value="{{ taller.fecha_programada.strftime('%Y-%m-%d') }}" required min="{{ hoy }}">
             </div>
 
             <div class="form-group-fixed" style="grid-column: span 2;">
                 <label>📝 Descripción / Objetivos</label>
-                <textarea name="descripcion" class="form-control-fixed" maxlength="5000">{{ taller.descripcion }}</textarea>
+                <textarea name="descripcion" class="form-control-fixed" maxlength="5000">{{ taller.descripcion or '' }}</textarea>
             </div>
 
             <div class="form-group-fixed" style="grid-column: span 2;">
@@ -162,20 +166,30 @@
 
 <script>
     document.getElementById('formEditar').addEventListener('submit', function(e) {
-        let fecha = document.querySelector('input[name="fecha_programada"]').value;
-        let hoy = new Date().toISOString().split('T')[0];
-        let estado = document.querySelector('select[name="estado"]').value;
-        let nombre = document.querySelector('input[name="nombre"]').value.trim();
+        const fecha = document.querySelector('input[name="fecha_programada"]').value;
+        const hoy = new Date().toISOString().split('T')[0];
+        const estado = document.querySelector('select[name="estado"]').value;
+        const nombre = document.querySelector('input[name="nombre"]').value.trim();
+        const aforo = parseInt(document.querySelector('input[name="aforo"]').value, 10);
+
         if (nombre.length < 3) {
             alert('El nombre debe tener al menos 3 caracteres.');
             e.preventDefault();
             return;
         }
+
+        if (!aforo || aforo < 1) {
+            alert('El aforo debe ser mayor a 0.');
+            e.preventDefault();
+            return;
+        }
+
         if (fecha < hoy && estado === 'Programado') {
             alert('No se puede programar un taller con fecha pasada.');
             e.preventDefault();
             return;
         }
+
         if (fecha > hoy && estado === 'Realizado') {
             alert('No se puede marcar como Realizado un taller con fecha futura.');
             e.preventDefault();

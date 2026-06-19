@@ -15,12 +15,23 @@ def create_app():
     app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
     # Configuración de correo
+  # Configuración de correo
     app.config['MAIL_SERVER'] = 'smtp.gmail.com'
     app.config['MAIL_PORT'] = 587
     app.config['MAIL_USE_TLS'] = True
+    app.config['MAIL_USE_SSL'] = False
+    app.config['MAIL_TIMEOUT'] = 30
+
     app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')
     app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')
     app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
+
+    print("========== CONFIG MAIL ==========")
+    print("MAIL_USERNAME =", app.config['MAIL_USERNAME'])
+    print("MAIL_PASSWORD =", bool(app.config['MAIL_PASSWORD']))
+    print("MAIL_SERVER =", app.config['MAIL_SERVER'])
+    print("MAIL_PORT =", app.config['MAIL_PORT'])
+    print("=================================")
     # Configuración desde variables de entorno
     mysql_url = os.getenv('MYSQL_URL')
 

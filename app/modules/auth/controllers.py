@@ -96,33 +96,75 @@ def registro():
 def recuperar_password():
     if request.method == 'POST':
         from app import mail
-        email = request.form.get('email').strip().lower()
+
+        email = request.form.get('email', '').strip().lower()
         usuario = Usuario.query.filter_by(email=email).first()
-        
-        if usuario:
-            token_obj = PasswordResetToken(usuario_id=usuario.id)
+
+        if not usuario:
+            flash('No encontramos ninguna cuenta con ese correo.', 'error')
+            return render_template('auth/recuperar_password.html')
+
+        token_obj = PasswordResetToken(usuario_id=usuario.id)
+
+        try:
             db.session.add(token_obj)
             db.session.commit()
-            
-            try:
-                msg = Message(
-                    subject="Recuperación de Contraseña | NEXUS",
-                    sender=current_app.config['MAIL_USERNAME'], # Usa config para mayor profesionalismo
-                    recipients=[email]
-                )
-                enlace = url_for('auth.restaurar_password', token=token_obj.token, _external=True)
-                msg.body = f"Hola {usuario.nombre}, recibimos una solicitud para restablecer tu contraseña.\n\nHaz clic aquí: {enlace}\n\nEste enlace expirará en 1 hora. Si no solicitaste esto, ignora este correo."
-                
-                mail.send(msg)
-                flash('Se han enviado instrucciones a tu correo institucional.', 'success')
-            except Exception as e:
-                print(f"Error al enviar correo: {e}")
-                flash('Hubo un problema al enviar el correo. Intenta de nuevo.', 'error')
-            
+
+            enlace = url_for(
+                'auth.restaurar_password',
+                token=token_obj.token,
+                _external=True
+            )
+
+            msg = Message(
+                subject='Recuperación de Contraseña | NEXUS',
+                sender=current_app.config['MAIL_USERNAME'],
+                recipients=[email]
+            )
+
+            msg.body = f"""
+Hola {usuario.nombre}
+
+Recibimos una solicitud para restablecer tu contraseña.
+
+Haz clic en el siguiente enlace:
+
+{enlace}
+
+Este enlace expirará en 1 hora.
+
+Si no solicitaste este cambio, ignora este mensaje.
+"""
+
+            print("===================================")
+            print("Intentando enviar correo a:", email)
+            print("SMTP:", current_app.config['MAIL_SERVER'])
+            print("Puerto:", current_app.config['MAIL_PORT'])
+            print("Usuario SMTP:", current_app.config['MAIL_USERNAME'])
+            print("===================================")
+
+            mail.send(msg)
+
+            print("CORREO ENVIADO CORRECTAMENTE")
+
+            flash(
+                'Se han enviado instrucciones a tu correo institucional.',
+                'success'
+            )
+
             return redirect(url_for('auth.login'))
-        else:
-            flash('No encontramos ninguna cuenta con ese correo.', 'error')
-            
+
+        except Exception as e:
+            db.session.rollback()
+
+            print("ERROR SMTP:")
+            print(repr(e))
+
+            flash(
+                f'Error al enviar correo: {str(e)}',
+                'error'
+            )
+
     return render_template('auth/recuperar_password.html')
 
 @auth_bp.route('/restaurar-password', methods=['GET', 'POST'])

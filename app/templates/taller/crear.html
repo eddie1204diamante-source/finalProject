@@ -10,60 +10,60 @@
         padding: 30px 35px 40px;
         border-radius: 20px;
         box-shadow: 0 10px 25px rgba(0,0,0,0.05), 0 2px 4px rgba(0,0,0,0.02);
-        transition: all 0.2s;
     }
+
     .form-header {
         text-align: center;
         margin-bottom: 30px;
         border-bottom: 2px solid #eef2f6;
         padding-bottom: 15px;
     }
+
     .form-header h2 {
         margin: 0;
         font-size: 1.8rem;
         color: #1e2a3e;
         font-weight: 600;
-        letter-spacing: -0.3px;
     }
+
     .form-grid {
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px 25px;
     }
+
     .form-group-fixed {
         display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        width: 100%;
-        margin-bottom: 5px;
     }
+
     .form-group-fixed label {
         margin-bottom: 8px;
         color: #334155;
         font-weight: 600;
-        font-size: 0.8rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
+        font-size: .8rem;
     }
+
     .form-control-fixed {
         width: 100%;
         padding: 12px 14px;
         border: 1px solid #cbd5e1;
         border-radius: 12px;
-        font-size: 0.9rem;
-        background: #fff;
-        transition: all 0.2s;
+        font-size: .9rem;
         box-sizing: border-box;
     }
+
     .form-control-fixed:focus {
         outline: none;
         border-color: #6366f1;
-        box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
+        box-shadow: 0 0 0 3px rgba(99,102,241,.1);
     }
+
     textarea.form-control-fixed {
         resize: vertical;
         min-height: 90px;
     }
+
     .form-actions {
         margin-top: 30px;
         display: flex;
@@ -72,110 +72,200 @@
         border-top: 1px solid #eef2f6;
         padding-top: 25px;
     }
+
     .btn-sena-lg {
         padding: 10px 28px;
         border-radius: 40px;
         font-weight: 600;
-        font-size: 0.9rem;
         border: none;
         cursor: pointer;
-        transition: all 0.2s;
         text-decoration: none;
-        display: inline-block;
     }
+
     .btn-save {
-        background: linear-gradient(135deg, #4f46e5, #3b82f6);
+        background: linear-gradient(135deg,#4f46e5,#3b82f6);
         color: white;
-        box-shadow: 0 2px 5px rgba(79,70,229,0.2);
     }
-    .btn-save:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 12px rgba(79,70,229,0.3);
-    }
+
     .btn-cancel {
         background: #f1f5f9;
         color: #475569;
     }
-    .btn-cancel:hover {
-        background: #e2e8f0;
-        transform: translateY(-2px);
+
+    /* ALERTAS */
+
+    .alert-custom{
+        padding:15px;
+        border-radius:12px;
+        margin-bottom:20px;
+        font-weight:600;
     }
-    @media (max-width: 640px) {
-        .form-grid { grid-template-columns: 1fr; }
-        .form-container-main { padding: 20px; }
+
+    .alert-success{
+        background:#dcfce7;
+        color:#166534;
+        border:1px solid #86efac;
+    }
+
+    .alert-danger{
+        background:#fee2e2;
+        color:#991b1b;
+        border:1px solid #fca5a5;
+    }
+
+    .alert-warning{
+        background:#fef3c7;
+        color:#92400e;
+        border:1px solid #fcd34d;
+    }
+
+    @media(max-width:640px){
+        .form-grid{
+            grid-template-columns:1fr;
+        }
     }
 </style>
 
 <div class="form-container-main">
+
     <div class="form-header">
         <h2>📘 Registrar Nuevo Taller</h2>
-        <p style="color: #64748b; margin-top: 8px;">Completa los datos del taller</p>
+        <p style="color:#64748b;">
+            Completa los datos del taller
+        </p>
     </div>
 
-    <form method="POST" action="{{ url_for('talleres.crear') }}" id="formCrear">
+    <!-- MENSAJES FLASH -->
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert-custom alert-{{ category }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST"
+          action="{{ url_for('talleres.crear') }}"
+          id="formCrear">
+
         <div class="form-grid">
+
             <div class="form-group-fixed" style="grid-column: span 2;">
                 <label>🏷️ Nombre del Taller *</label>
-                <input type="text" name="nombre" class="form-control-fixed" required minlength="3" pattern=".*\S.*" title="Mínimo 3 caracteres, no solo espacios." placeholder="Ej: Taller de Liderazgo">
+
+                <input
+                    type="text"
+                    name="nombre"
+                    class="form-control-fixed"
+                    minlength="3"
+                    required
+                    placeholder="Ej: Taller de Liderazgo">
             </div>
 
             <div class="form-group-fixed">
                 <label>👩‍🏫 Instructor Responsable *</label>
-                <select name="instructor_id" class="form-control-fixed" required>
-                    <option value="" disabled selected>-- Seleccione Instructor --</option>
+
+                <select
+                    name="instructor_id"
+                    class="form-control-fixed"
+                    required>
+
+                    <option value="">
+                        -- Seleccione Instructor --
+                    </option>
+
                     {% for ins in instructores %}
-                        <option value="{{ ins.id }}">{{ ins.nombres }} {{ ins.apellidos }}</option>
+                    <option value="{{ ins.id }}">
+                        {{ ins.nombres }} {{ ins.apellidos }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
 
             <div class="form-group-fixed">
                 <label>👥 Aforo *</label>
-                <input type="number" name="aforo" class="form-control-fixed" min="1" max="1000" value="1" required>
+
+                <input
+                    type="number"
+                    name="aforo"
+                    class="form-control-fixed"
+                    min="1"
+                    max="1000"
+                    value="1"
+                    required>
             </div>
 
             <div class="form-group-fixed">
                 <label>📅 Fecha de Realización *</label>
-                <input type="date" name="fecha_programada" class="form-control-fixed" required min="{{ hoy }}">
+
+                <input
+                    type="date"
+                    name="fecha_programada"
+                    class="form-control-fixed"
+                    min="{{ hoy }}"
+                    required>
             </div>
 
             <div class="form-group-fixed" style="grid-column: span 2;">
                 <label>📝 Descripción / Objetivos</label>
-                <textarea name="descripcion" class="form-control-fixed" maxlength="5000" placeholder="Describe brevemente el contenido del taller..."></textarea>
+
+                <textarea
+                    name="descripcion"
+                    maxlength="5000"
+                    class="form-control-fixed"
+                    placeholder="Describe brevemente el contenido del taller..."></textarea>
             </div>
+
         </div>
 
         <div class="form-actions">
-            <button type="submit" class="btn-sena-lg btn-save">✅ Guardar Taller</button>
-            <a href="{{ url_for('talleres.index') }}" class="btn-sena-lg btn-cancel">❌ Cancelar</a>
+            <button type="submit" class="btn-sena-lg btn-save">
+                ✅ Guardar Taller
+            </button>
+
+            <a href="{{ url_for('talleres.index') }}"
+               class="btn-sena-lg btn-cancel">
+                ❌ Cancelar
+            </a>
         </div>
+
     </form>
+
 </div>
 
 <script>
-    document.getElementById('formCrear').addEventListener('submit', function(e) {
-        const nombre = document.querySelector('input[name="nombre"]').value.trim();
-        const aforo = parseInt(document.querySelector('input[name="aforo"]').value, 10);
-        const fecha = document.querySelector('input[name="fecha_programada"]').value;
-        const hoy = new Date().toISOString().split('T')[0];
 
-        if (nombre.length < 3) {
-            alert('El nombre debe tener al menos 3 caracteres.');
-            e.preventDefault();
-            return;
-        }
+document.getElementById('formCrear').addEventListener('submit', function(e){
 
-        if (!aforo || aforo < 1) {
-            alert('El aforo debe ser mayor a 0.');
-            e.preventDefault();
-            return;
-        }
+    const nombre = document.querySelector('[name="nombre"]').value.trim();
+    const aforo = parseInt(document.querySelector('[name="aforo"]').value);
+    const fecha = document.querySelector('[name="fecha_programada"]').value;
 
-        if (fecha < hoy) {
-            alert('La fecha no puede ser anterior a hoy.');
-            e.preventDefault();
-            return;
-        }
-    });
+    const hoy = new Date().toISOString().split('T')[0];
+
+    if(nombre.length < 3){
+        alert("El nombre debe tener mínimo 3 caracteres.");
+        e.preventDefault();
+        return;
+    }
+
+    if(isNaN(aforo) || aforo < 1){
+        alert("El aforo debe ser mayor a 0.");
+        e.preventDefault();
+        return;
+    }
+
+    if(fecha < hoy){
+        alert("La fecha no puede ser anterior a hoy.");
+        e.preventDefault();
+        return;
+    }
+
+});
+
 </script>
+
 {% endblock %}

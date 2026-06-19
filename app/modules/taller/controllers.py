@@ -3,7 +3,7 @@ from flask_login import login_required
 from app.modules.taller.models import Taller
 from app.modules.instructor.models import Instructor
 from app.database import db
-from datetime import datetime
+from datetime import datetime, date
 
 talleres_bp = Blueprint('talleres', __name__, template_folder='templates')
 
@@ -11,8 +11,11 @@ talleres_bp = Blueprint('talleres', __name__, template_folder='templates')
 # ========== FUNCIONES DE VALIDACIÓN ==========
 def obtener_instructor_activo(instructor_id):
     """Obtiene un instructor por ID y verifica que esté activo."""
-    if not instructor_id:
+    try:
+        instructor_id = int(instructor_id)
+    except (TypeError, ValueError):
         return None
+
     return Instructor.query.filter_by(id=instructor_id, activo=True).first()
 
 
@@ -32,16 +35,16 @@ def validar_descripcion(descripcion):
 
 def validar_fecha(fecha_str):
     try:
-        # Se guarda como DateTime a las 00:00:00
         fecha = datetime.strptime(fecha_str, '%Y-%m-%d')
     except ValueError:
         return None, False, "Formato de fecha inválido. Use YYYY-MM-DD."
 
-    hoy = datetime.now()
-    if fecha < hoy.replace(hour=0, minute=0, second=0, microsecond=0):
+    hoy = date.today()
+
+    if fecha.date() < hoy:
         return None, False, "La fecha no puede ser anterior a hoy."
 
-    if fecha.year > hoy.year + 2:
+    if fecha.date() > hoy.replace(year=hoy.year + 2):
         return None, False, "No se pueden programar talleres con más de 2 años de anticipación."
 
     return fecha, True, ""
@@ -60,13 +63,20 @@ def validar_aforo(aforo_str):
 
 
 def evitar_duplicado(instructor_id, fecha, id_excluir=None):
+    try:
+        instructor_id = int(instructor_id)
+    except (TypeError, ValueError):
+        return False
+
     query = Taller.query.filter(
         Taller.instructor_id == instructor_id,
         Taller.fecha_programada == fecha,
         Taller.estado != 'Cancelado'
     )
+
     if id_excluir:
         query = query.filter(Taller.id != id_excluir)
+
     return query.first() is not None
 
 
@@ -74,8 +84,8 @@ def evitar_duplicado(instructor_id, fecha, id_excluir=None):
 @talleres_bp.route('/')
 @login_required
 def index():
-    # Marcar talleres pasados como realizados
     ahora = datetime.now()
+
     talleres_programados = Taller.query.filter(
         Taller.estado == 'Programado',
         Taller.fecha_programada < ahora
@@ -96,50 +106,78 @@ def crear():
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
-        instructor_id = request.form.get('instructor', '').strip()
-        fecha_str = request.form.get('fecha_programada', '').strip()
+        instructor_id = request.form.get('instructor_id', '').strip()
         aforo_str = request.form.get('aforo', '').strip()
+        fecha_str = request.form.get('fecha_programada', '').strip()
 
-        # Validaciones básicas
-        if not nombre or not instructor_id or not fecha_str or not aforo_str:
+        # Validación básica
+        if not nombre or not instructor_id or not aforo_str or not fecha_str:
             flash('Todos los campos son obligatorios.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         valido, msg = validar_nombre_taller(nombre)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         valido, msg = validar_descripcion(descripcion)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         fecha, valido, msg = validar_fecha(fecha_str)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         aforo, valido, msg = validar_aforo(aforo_str)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         instructor = obtener_instructor_activo(instructor_id)
         if not instructor:
             flash('El instructor seleccionado no es válido o no está activo.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         if evitar_duplicado(instructor.id, fecha):
             flash('El instructor ya tiene un taller programado (no cancelado) en esta fecha.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         try:
             nuevo = Taller(
@@ -158,10 +196,18 @@ def crear():
             db.session.rollback()
             flash(f'Error al guardar: {str(e)}', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/crear.html',
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
     instructores = Instructor.query.filter_by(activo=True).all()
-    return render_template('taller/crear.html', instructores=instructores, hoy=datetime.now().date().isoformat())
+    return render_template(
+        'taller/crear.html',
+        instructores=instructores,
+        hoy=date.today().isoformat()
+    )
 
 
 @talleres_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
@@ -172,69 +218,113 @@ def editar(id):
     if request.method == 'POST':
         nombre = request.form.get('nombre', '').strip()
         descripcion = request.form.get('descripcion', '').strip()
-        instructor_id = request.form.get('instructor', '').strip()
-        fecha_str = request.form.get('fecha_programada', '').strip()
+        instructor_id = request.form.get('instructor_id', '').strip()
         aforo_str = request.form.get('aforo', '').strip()
+        fecha_str = request.form.get('fecha_programada', '').strip()
         nuevo_estado = request.form.get('estado', taller.estado)
 
-        # Validaciones básicas
-        if not nombre or not instructor_id or not fecha_str or not aforo_str:
+        if not nombre or not instructor_id or not aforo_str or not fecha_str:
             flash('Todos los campos son obligatorios.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         valido, msg = validar_nombre_taller(nombre)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         valido, msg = validar_descripcion(descripcion)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         fecha, valido, msg = validar_fecha(fecha_str)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         aforo, valido, msg = validar_aforo(aforo_str)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         instructor = obtener_instructor_activo(instructor_id)
         if not instructor:
             flash('El instructor seleccionado no es válido o no está activo.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         if evitar_duplicado(instructor.id, fecha, id_excluir=id):
             flash('El instructor ya tiene otro taller programado (no cancelado) en esta fecha.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         ahora = datetime.now()
+
         if nuevo_estado == 'Realizado' and fecha > ahora:
             flash('No se puede marcar como Realizado un taller con fecha futura.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
         if nuevo_estado == 'Programado' and fecha < ahora.replace(hour=0, minute=0, second=0, microsecond=0):
             flash('No se puede programar un taller con fecha pasada.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
-        # Actualizar
         taller.nombre = nombre
         taller.descripcion = descripcion
         taller.instructor_id = instructor.id
-        taller.fecha_programada = fecha
         taller.aforo = aforo
+        taller.fecha_programada = fecha
         taller.estado = nuevo_estado
 
         try:
@@ -245,23 +335,34 @@ def editar(id):
             db.session.rollback()
             flash(f'Error al actualizar: {str(e)}', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
-            return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
 
     instructores = Instructor.query.filter_by(activo=True).all()
-    return render_template('taller/editar.html', taller=taller, instructores=instructores, hoy=datetime.now().date().isoformat())
+    return render_template(
+        'taller/editar.html',
+        taller=taller,
+        instructores=instructores,
+        hoy=date.today().isoformat()
+    )
 
 
 @talleres_bp.route('/cambiar-estado/<int:id>', methods=['POST'])
 @login_required
 def cambiar_estado(id):
     taller = Taller.query.get_or_404(id)
+    hoy = date.today()
     ahora = datetime.now()
 
     if taller.estado != 'Cancelado':
         taller.estado = 'Cancelado'
         flash(f'Taller "{taller.nombre}" cancelado.', 'warning')
     else:
-        if taller.fecha_programada < ahora.replace(hour=0, minute=0, second=0, microsecond=0):
+        if taller.fecha_programada.date() < hoy:
             flash('No se puede reactivar un taller con fecha pasada.', 'danger')
             return redirect(url_for('talleres.index'))
 

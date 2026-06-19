@@ -30,6 +30,16 @@ def create_app():
     print("MAIL_SERVER =", app.config['MAIL_SERVER'])
     print("MAIL_PORT =", app.config['MAIL_PORT'])
     print("=================================")
+    import socket
+
+    try:
+        socket.create_connection(
+            ("smtp-relay.brevo.com", 587),
+            timeout=10
+        )
+        print("SMTP REACHABLE")
+    except Exception as e:
+        print("SMTP BLOCKED:", repr(e))
     # Configuración desde variables de entorno
     mysql_url = os.getenv('MYSQL_URL')
 

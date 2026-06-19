@@ -142,7 +142,27 @@ Si no solicitaste este cambio, ignora este mensaje.
             print("Puerto:", current_app.config['MAIL_PORT'])
             print("Usuario SMTP:", current_app.config['MAIL_USERNAME'])
             print("===================================")
+            import smtplib
 
+            try:
+                server = smtplib.SMTP(
+                    current_app.config['MAIL_SERVER'],
+                    current_app.config['MAIL_PORT'],
+                    timeout=10
+                )
+
+                server.starttls()
+
+                server.login(
+                    current_app.config['MAIL_USERNAME'],
+                    current_app.config['MAIL_PASSWORD']
+                )
+
+                print("SMTP FUNCIONANDO")
+                server.quit()
+
+            except Exception as e:
+                print("ERROR SMTP:", str(e))
             mail.send(msg)
 
             print("CORREO ENVIADO CORRECTAMENTE")

@@ -1,59 +1,24 @@
 from flask import Flask, redirect, url_for
 from app.database import db
 from flask_login import LoginManager
-from flask_mail import Mail
 import os
-
-mail = Mail()
 
 def create_app():
     app = Flask(__name__)
 
-    # Configuración desde variables de entorno
-    app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('MYSQL_URL')
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
-
-    # Configuración de correo
-  # Configuración de correo
-    app.config["MAIL_SERVER"] = "smtp-relay.brevo.com"
-    app.config["MAIL_PORT"] = 587
-    app.config["MAIL_USE_TLS"] = True
-    app.config["MAIL_USE_SSL"] = False
-    app.config["MAIL_USERNAME"] = os.getenv("MAIL_USERNAME")
-    app.config["MAIL_PASSWORD"] = os.getenv("MAIL_PASSWORD")
-    app.config['MAIL_DEFAULT_SENDER'] = os.getenv('MAIL_USERNAME')
-
-    print("========== CONFIG MAIL ==========")
-    print("MAIL_USERNAME =", app.config['MAIL_USERNAME'])
-    print("MAIL_PASSWORD =", bool(app.config['MAIL_PASSWORD']))
-    print("MAIL_SERVER =", app.config['MAIL_SERVER'])
-    print("MAIL_PORT =", app.config['MAIL_PORT'])
-    print("=================================")
-    import socket
-
-    try:
-        socket.create_connection(
-            ("smtp-relay.brevo.com", 587),
-            timeout=10
-        )
-        print("SMTP REACHABLE")
-    except Exception as e:
-        print("SMTP BLOCKED:", repr(e))
-    # Configuración desde variables de entorno
+    # Base de datos
     mysql_url = os.getenv('MYSQL_URL')
-
     if mysql_url:
         mysql_url = mysql_url.replace("mysql://", "mysql+pymysql://", 1)
 
     app.config['SQLALCHEMY_DATABASE_URI'] = mysql_url
+    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 
     print("MYSQL_URL =", os.getenv('MYSQL_URL'))
     print("SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])
 
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
     db.init_app(app)
-    mail.init_app(app)
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
@@ -68,10 +33,10 @@ def create_app():
     from app.modules.instructor.controllers import instructor_bp
     from app.modules.comite.controllers import comite_bp
     from app.modules.usuario.controllers import usuario_bp
-    # NUEVO: Importación del controlador de atención
     from app.modules.atencion.controllers import atencion_bp
     from app.modules.taller.controllers import talleres_bp
     from app.modules.reportes.controllers import reportes_bp
+
     app.register_blueprint(auth_bp)
     app.register_blueprint(aprendiz_bp, url_prefix='/aprendices')
     app.register_blueprint(main_bp)
@@ -80,23 +45,23 @@ def create_app():
     app.register_blueprint(instructor_bp, url_prefix='/instructores')
     app.register_blueprint(comite_bp, url_prefix='/comites')
     app.register_blueprint(usuario_bp, url_prefix='/usuarios')
-    # NUEVO: Registro del blueprint de atención
     app.register_blueprint(atencion_bp, url_prefix='/atencion')
     app.register_blueprint(talleres_bp, url_prefix='/taller')
     app.register_blueprint(reportes_bp, url_prefix='/reportes')
+
     @app.route('/')
     def index():
         return redirect(url_for('auth.login'))
 
     with app.app_context():
-        # IMPORTANTE: Cargamos los modelos para que SQLAlchemy reconozca las relaciones
         from app.modules.auth.models import Usuario
         from app.modules.comite.models import Comite
         from app.modules.aprendiz.models import Aprendiz
-        # NUEVO: Carga del modelo de Atención para las relaciones de BD
         from app.modules.atencion.models import Atencion
         from app.modules.taller.models import Taller
+
         db.create_all()
+
         @login_manager.user_loader
         def load_user(user_id):
             return Usuario.query.get(int(user_id))

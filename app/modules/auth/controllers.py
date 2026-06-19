@@ -1,26 +1,59 @@
 import re
-from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
+import os
+import requests
+from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
-from flask_mail import Message
 from app.database import db
 from app.modules.auth.models import Usuario, PasswordResetToken
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
-# --- CONSTANTE DE VALIDACIÓN (Para no repetir código) ---
 REGEX_PASSWORD = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 DOMINIOS_SENA = ("sena.edu.co", "misena.edu.co")
+
+def enviar_correo_brevo(destino, asunto, contenido):
+    api_key = os.getenv("BREVO_API_KEY")
+    if not api_key:
+        raise ValueError("Falta la variable de entorno BREVO_API_KEY")
+
+    remitente = os.getenv("MAIL_USERNAME")
+    if not remitente:
+        raise ValueError("Falta la variable de entorno MAIL_USERNAME")
+
+    response = requests.post(
+        "https://api.brevo.com/v3/smtp/email",
+        headers={
+            "accept": "application/json",
+            "api-key": api_key,
+            "content-type": "application/json"
+        },
+        json={
+            "sender": {
+                "name": "NEXUS",
+                "email": remitente
+            },
+            "to": [
+                {"email": destino}
+            ],
+            "subject": asunto,
+            "textContent": contenido
+        },
+        timeout=15
+    )
+
+    response.raise_for_status()
+    return response.json()
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
         usuario = Usuario.query.filter_by(email=email).first()
-        
+
         if usuario and bcrypt.check_password_hash(usuario.password, password):
             if usuario.enabled:
                 login_user(usuario)
@@ -30,52 +63,45 @@ def login():
                 flash('Tu cuenta está deshabilitada.', 'error')
         else:
             flash('Correo o contraseña incorrectos.', 'error')
-            
+
     return render_template('auth/login.html')
+
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        # 1. Obtener y limpiar datos primero
         nombre = request.form.get('nombre', '').strip()
         email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirmPassword')
-        rol = request.form.get('rol')
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirmPassword', '')
+        rol = request.form.get('rol', '')
 
-        # 2. Validación de campos vacíos
         if not all([nombre, email, password, rol]):
             flash('Todos los campos son obligatorios.', 'error')
             return render_template('auth/registro.html')
 
-        # 3. Validación de Nombre (3-50 caracteres, sin números)
         if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,50}$", nombre):
             flash('El nombre debe tener entre 3 y 50 letras (sin números).', 'error')
             return render_template('auth/registro.html')
 
-        # 4. Validación de Email Institucional Estricta (Mínimo 3 caracteres antes del @)
         if not re.match(r"^[a-zA-Z0-9._%+-]{3,}@(sena\.edu\.co|misena\.edu\.co)$", email):
             flash('El formato del correo institucional es inválido (mín. 3 caracteres antes del @).', 'error')
             return render_template('auth/registro.html')
 
-        # 5. Validación de coincidencia de contraseñas
         if password != confirm_password:
             flash('Las contraseñas no coinciden.', 'error')
             return render_template('auth/registro.html')
 
-        # 6. Validación de complejidad de contraseña (REGEX)
         if not re.match(REGEX_PASSWORD, password):
             flash('Contraseña débil: Mín. 8 caracteres, una mayúscula, un número y un símbolo.', 'error')
             return render_template('auth/registro.html')
 
-        # 7. Verificación de existencia en DB
         if Usuario.query.filter_by(email=email).first():
             flash(f'El correo {email} ya está registrado.', 'error')
             return render_template('auth/registro.html')
 
-        # 8. Intento de guardado
         try:
             nuevo_usuario = Usuario(
-                nombre=nombre.title(), 
+                nombre=nombre.title(),
                 email=email,
                 password=bcrypt.generate_password_hash(password).decode('utf-8'),
                 rol=rol,
@@ -95,8 +121,6 @@ def registro():
 @auth_bp.route('/recuperar-password', methods=['GET', 'POST'])
 def recuperar_password():
     if request.method == 'POST':
-        from app import mail
-
         email = request.form.get('email', '').strip().lower()
         usuario = Usuario.query.filter_by(email=email).first()
 
@@ -116,14 +140,7 @@ def recuperar_password():
                 _external=True
             )
 
-            msg = Message(
-                subject='Recuperación de Contraseña | NEXUS',
-                sender=current_app.config['MAIL_USERNAME'],
-                recipients=[email]
-            )
-
-            msg.body = f"""
-Hola {usuario.nombre}
+            contenido = f"""Hola {usuario.nombre}
 
 Recibimos una solicitud para restablecer tu contraseña.
 
@@ -136,54 +153,20 @@ Este enlace expirará en 1 hora.
 Si no solicitaste este cambio, ignora este mensaje.
 """
 
-            print("===================================")
-            print("Intentando enviar correo a:", email)
-            print("SMTP:", current_app.config['MAIL_SERVER'])
-            print("Puerto:", current_app.config['MAIL_PORT'])
-            print("Usuario SMTP:", current_app.config['MAIL_USERNAME'])
-            print("===================================")
-            import smtplib
-
-            try:
-                server = smtplib.SMTP(
-                    current_app.config['MAIL_SERVER'],
-                    current_app.config['MAIL_PORT'],
-                    timeout=10
-                )
-
-                server.starttls()
-
-                server.login(
-                    current_app.config['MAIL_USERNAME'],
-                    current_app.config['MAIL_PASSWORD']
-                )
-
-                print("SMTP FUNCIONANDO")
-                server.quit()
-
-            except Exception as e:
-                print("ERROR SMTP:", str(e))
-            mail.send(msg)
-
-            print("CORREO ENVIADO CORRECTAMENTE")
-
-            flash(
-                'Se han enviado instrucciones a tu correo institucional.',
-                'success'
+            enviar_correo_brevo(
+                email,
+                "Recuperación de Contraseña | NEXUS",
+                contenido
             )
 
+            flash('Se han enviado instrucciones a tu correo institucional.', 'success')
             return redirect(url_for('auth.login'))
 
         except Exception as e:
             db.session.rollback()
-
-            print("ERROR SMTP:")
+            print("ERROR BREVO:")
             print(repr(e))
-
-            flash(
-                f'Error al enviar correo: {str(e)}',
-                'error'
-            )
+            flash(f'Error al enviar correo: {str(e)}', 'error')
 
     return render_template('auth/recuperar_password.html')
 
@@ -197,10 +180,9 @@ def restaurar_password():
         return redirect(url_for('auth.login'))
 
     if request.method == 'POST':
-        password = request.form.get('password')
-        confirm_password = request.form.get('confirmPassword')
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirmPassword', '')
 
-        # Aplicamos las mismas reglas de seguridad que en el registro
         if password != confirm_password:
             flash('Las contraseñas no coinciden.', 'error')
             return render_template('auth/restaurar_password.html', token=token)
@@ -214,7 +196,7 @@ def restaurar_password():
             usuario.password = bcrypt.generate_password_hash(password).decode('utf-8')
             db.session.delete(token_obj)
             db.session.commit()
-            
+
             flash('Contraseña actualizada correctamente. Ya puedes iniciar sesión.', 'success')
             return redirect(url_for('auth.login'))
 

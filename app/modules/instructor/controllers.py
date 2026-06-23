@@ -161,7 +161,13 @@ def importar_excel():
 
         try:
 
-            df = pd.read_excel(file, dtype=str).fillna('')
+            df = pd.read_excel(file, dtype=str)
+            df = df.dropna(how='all')
+            df = df.fillna('')
+            df.columns = df.columns.str.strip()
+
+            print("FILAS LEIDAS:", df.shape[0])
+            print(df.head(20))
             df.columns = df.columns.str.strip()
 
             columnas = {
@@ -234,7 +240,11 @@ def importar_excel():
                     agregados += 1
 
                 except Exception as e:
-                    print(f"Error fila {index}: {e}")
+                    print("=" * 60)
+                    print(f"ERROR EN FILA {index + 2}")
+                    print(row.to_dict())
+                    print(f"DETALLE: {e}")
+                    print("=" * 60)
                     errores += 1
 
             db.session.commit()

@@ -110,11 +110,10 @@ def recuperar_password():
                 
                 # ADAPTACIÓN DEFINITIVA: Vinculado a Brevo HTTPS con tu remitente verificado
                 mail.send_message(
-                    subject="Recuperación de Contraseña | NEXUS",
-                    recipients=[email],
-                    html_body=cuerpo_html,
-                    sender="NEXUS SENA <eddie1204diamante@gmail.com>"
-                )
+                subject="Recuperación de Contraseña | NEXUS",
+                recipients=[email],
+                html_body=cuerpo_html
+            )
                 
                 flash('Se han enviado instrucciones a tu correo institucional.', 'success')
             except Exception as e:

@@ -2,14 +2,13 @@ import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
-# SE ELIMINÓ: from flask_mail import Message (Ya no la necesitamos)
 from app.database import db
 from app.modules.auth.models import Usuario, PasswordResetToken
 
 auth_bp = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
 
-# --- CONSTANTE DE VALIDACIÓN (Para no repetir código) ---
+# --- CONSTANTE DE VALIDACIÓN ---
 REGEX_PASSWORD = r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
 DOMINIOS_SENA = ("sena.edu.co", "misena.edu.co")
 
@@ -36,44 +35,36 @@ def login():
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
-        # 1. Obtener y limpiar datos primero
         nombre = request.form.get('nombre', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password')
         confirm_password = request.form.get('confirmPassword')
         rol = request.form.get('rol')
 
-        # 2. Validación de campos vacíos
         if not all([nombre, email, password, rol]):
             flash('Todos los campos son obligatorios.', 'error')
             return render_template('auth/registro.html')
 
-        # 3. Validación de Nombre (3-50 caracteres, sin números)
         if not re.match(r"^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]{3,50}$", nombre):
             flash('El nombre debe tener entre 3 y 50 letras (sin números).', 'error')
             return render_template('auth/registro.html')
 
-        # 4. Validación de Email Institucional Estricta (Mínimo 3 caracteres antes del @)
         if not re.match(r"^[a-zA-Z0-9._%+-]{3,}@(sena\.edu\.co|misena\.edu\.co)$", email):
             flash('El formato del correo institucional es inválido (mín. 3 caracteres antes del @).', 'error')
             return render_template('auth/registro.html')
 
-        # 5. Validación de coincidencia de contraseñas
         if password != confirm_password:
             flash('Las contraseñas no coinciden.', 'error')
             return render_template('auth/registro.html')
 
-        # 6. Validación de complejidad de contraseña (REGEX)
         if not re.match(REGEX_PASSWORD, password):
             flash('Contraseña débil: Mín. 8 caracteres, una mayúscula, un número y un símbolo.', 'error')
             return render_template('auth/registro.html')
 
-        # 7. Verificación de existencia en DB
         if Usuario.query.filter_by(email=email).first():
             flash(f'El correo {email} ya está registrado.', 'error')
             return render_template('auth/registro.html')
 
-        # 8. Intento de guardado
         try:
             nuevo_usuario = Usuario(
                 nombre=nombre.title(), 
@@ -96,7 +87,7 @@ def registro():
 @auth_bp.route('/recuperar-password', methods=['GET', 'POST'])
 def recuperar_password():
     if request.method == 'POST':
-        from app import mail  # Importamos tu nueva clase customizada para Resend
+        from app import mail  # Importamos tu clase espejo vinculada a Brevo
         email = request.form.get('email').strip().lower()
         usuario = Usuario.query.filter_by(email=email).first()
         
@@ -108,7 +99,6 @@ def recuperar_password():
             try:
                 enlace = url_for('auth.restaurar_password', token=token_obj.token, _external=True)
                 
-                # Creamos el cuerpo estructurado en HTML para que se envíe correctamente vía API
                 cuerpo_html = f"""
                 <p>Hola <strong>{usuario.nombre}</strong>,</p>
                 <p>Recibimos una solicitud para restablecer tu contraseña en NEXUS.</p>
@@ -118,17 +108,17 @@ def recuperar_password():
                 <p><small>Este enlace expirará en 1 hora. Si no solicitaste esto, puedes ignorar este correo con seguridad.</small></p>
                 """
                 
-                # ADAPTACIÓN: Llamamos al método HTTPS que creamos en tu archivo principal
+                # ADAPTACIÓN DEFINITIVA: Vinculado a Brevo HTTPS con tu remitente verificado
                 mail.send_message(
                     subject="Recuperación de Contraseña | NEXUS",
                     recipients=[email],
                     html_body=cuerpo_html,
-                    sender="NEXUS <onboarding@resend.dev>"  # Cambiar por dominio propio al verificarlo
+                    sender="NEXUS SENA <eddie1204diamante@gmail.com>"
                 )
                 
                 flash('Se han enviado instrucciones a tu correo institucional.', 'success')
             except Exception as e:
-                print(f"Error al enviar correo por API: {e}")
+                print(f"Error al enviar correo por API Brevo: {e}")
                 flash('Hubo un problema al enviar el correo. Intenta de nuevo.', 'error')
             
             return redirect(url_for('auth.login'))
@@ -150,7 +140,6 @@ def restaurar_password():
         password = request.form.get('password')
         confirm_password = request.form.get('confirmPassword')
 
-        # Aplicamos las mismas reglas de seguridad que en el registro
         if password != confirm_password:
             flash('Las contraseñas no coinciden.', 'error')
             return render_template('auth/restaurar_password.html', token=token)

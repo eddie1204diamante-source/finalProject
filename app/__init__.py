@@ -1,67 +1,93 @@
+import os
+import base64
+import requests  # <-- Necesario para conectar con Brevo por HTTPS
 from flask import Flask, redirect, url_for
 from app.database import db
 from flask_login import LoginManager
-import os
-import base64
-import resend  # <--- 1. Importamos la nueva librería
 
-# 2. Creamos una clase espejo para no romper el resto de tus archivos/controladores
-class ResendMail:
-    def send_message_with_attachment(self, subject, recipients, html_body, filename, file_bytes, sender=None):
-        from_email = sender or "NEXUS SENA <onboarding@resend.dev>"
-
-        pdf_base64 = base64.b64encode(file_bytes).decode("utf-8")
-
-        params = {
-            "from": from_email,
-            "to": recipients if isinstance(recipients, list) else [recipients],
-            "subject": subject,
-            "html": html_body,
-            "attachments": [
-                {
-                    "filename": filename,
-                    "content": pdf_base64
-                }
-            ]
-        }
-
-        try:
-            response = resend.Emails.send(params)
-            print(f"Correo con adjunto enviado correctamente mediante Resend. ID: {response.get('id')}")
-            return response
-        except Exception as e:
-            print(f"Error crítico al enviar correo con adjunto por Resend: {e}")
-            return None
-
+# --- NUEVA CLASE PARA ENVIAR POR BREVO HTTPS ---
+class BrevoMail:
     def __init__(self):
         self.api_key = None
 
     def init_app(self, app):
-        # Leemos la variable que ya configuraste en Railway
-        self.api_key = os.getenv('RESEND_API_KEY')
-        resend.api_key = self.api_key
+        # Captura la variable BREVO_API_KEY desde Railway
+        self.api_key = os.getenv('BREVO_API_KEY')
 
     def send_message(self, subject, recipients, html_body, sender=None):
-        """Método rápido para enviar correos usando la API HTTPS de Resend"""
-        from_email = sender or "Tu App <onboarding@resend.dev>"
+        """Método para correos simples (ej: Recuperación de contraseña)"""
+        from_email = sender or "eddie1204diamante@gmail.com"
+        
+        url = "https://brevo.com"
+        headers = {
+            "accept": "application/json",
+            "api-key": self.api_key,
+            "content-type": "application/json"
+        }
+        
+        to_list = [{"email": email} for email in (recipients if isinstance(recipients, list) else [recipients])]
+        
+        payload = {
+            "sender": {"name": "NEXUS SENA", "email": from_email},
+            "to": to_list,
+            "subject": subject,
+            "htmlContent": html_body
+        }
         
         try:
-            params = {
-                "from": from_email,
-                "to": recipients if isinstance(recipients, list) else [recipients],
-                "subject": subject,
-                "html": html_body,
-            }
-            response = resend.Emails.send(params)
-            print(f"Correo enviado exitosamente mediante Resend. ID: {response.get('id')}")
-            return response
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code == 200 or response.status_code == 201:
+                print(f"Correo enviado exitosamente vía Brevo HTTPS. ID: {response.json().get('messageId')}")
+                return response.json()
+            else:
+                print(f"Error API Brevo: {response.status_code} - {response.text}")
+                return None
         except Exception as e:
-            print(f"Error crítico al enviar correo por Resend HTTPS: {e}")
+            print(f"Error crítico de conexión HTTPS con Brevo: {e}")
+            return None
+
+    def send_message_with_attachment(self, subject, recipients, html_body, filename, file_bytes, sender=None):
+        """Método para correos con el PDF adjunto (ej: Módulo de reportes)"""
+        from_email = sender or "eddie1204diamante@gmail.com"
+        
+        url = "https://brevo.com"
+        headers = {
+            "accept": "application/json",
+            "api-key": self.api_key,
+            "content-type": "application/json"
+        }
+        
+        to_list = [{"email": email} for email in (recipients if isinstance(recipients, list) else [recipients])]
+        pdf_base64 = base64.b64encode(file_bytes).decode("utf-8")
+        
+        payload = {
+            "sender": {"name": "NEXUS SENA", "email": from_email},
+            "to": to_list,
+            "subject": subject,
+            "htmlContent": html_body,
+            "attachments": [
+                {
+                    "name": filename,
+                    "content": pdf_base64
+                }
+            ]
+        }
+        
+        try:
+            response = requests.post(url, json=payload, headers=headers)
+            if response.status_code == 200 or response.status_code == 201:
+                print(f"Correo con adjunto enviado correctamente mediante Brevo HTTPS. ID: {response.json().get('messageId')}")
+                return response.json()
+            else:
+                print(f"Error API Brevo con adjunto: {response.status_code} - {response.text}")
+                return None
+        except Exception as e:
+            print(f"Error crítico al enviar correo con adjunto por Brevo HTTPS: {e}")
             return None
 
 
-# Mantienes exactamente el mismo nombre de objeto para que tus controladores no fallen
-mail = ResendMail()
+# Mantienes exactamente el mismo nombre de objeto para no romper tus controladores
+mail = BrevoMail()
 
 def create_app():
     app = Flask(__name__)
@@ -71,6 +97,7 @@ def create_app():
 
     # Configuración desde variables de entorno de Base de Datos
     mysql_url = os.getenv('MYSQL_URL')
+
     if mysql_url:
         mysql_url = mysql_url.replace("mysql://", "mysql+pymysql://", 1)
 
@@ -80,16 +107,14 @@ def create_app():
     print("SQLALCHEMY_DATABASE_URI =", app.config['SQLALCHEMY_DATABASE_URI'])
 
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-    
-    # Inicializaciones de extensiones
     db.init_app(app)
-    mail.init_app(app)  # <--- Inicializa la configuración de Resend
+    mail.init_app(app)  # Inicializa la configuración de Brevo
 
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
 
-    # --- REGISTRO DE BLUEPRINTS (Se mantiene exactamente igual) ---
+    # --- REGISTRO DE BLUEPRINTS ---
     from app.modules.auth.controllers import auth_bp
     from app.modules.aprendiz.controllers import aprendiz_bp
     from app.modules.main.controllers import main_bp
@@ -113,7 +138,7 @@ def create_app():
     app.register_blueprint(atencion_bp, url_prefix='/atencion')
     app.register_blueprint(talleres_bp, url_prefix='/taller')
     app.register_blueprint(reportes_bp, url_prefix='/reportes')
-    
+
     @app.route('/')
     def index():
         return redirect(url_for('auth.login'))

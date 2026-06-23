@@ -20,7 +20,7 @@ reportes_bp = Blueprint('reportes', __name__)
 
 
 def enviar_correo_asincrono(app, destinatarios, pdf_bytes, filename, fecha_inicio, fecha_fin):
-    """Envía el reporte por Resend usando el mismo objeto mail que recuperación de contraseña."""
+    """Envía el reporte por Brevo usando el mismo objeto mail que recuperación de contraseña."""
     with app.app_context():
         try:
             cuerpo_html = f"""
@@ -44,13 +44,14 @@ def enviar_correo_asincrono(app, destinatarios, pdf_bytes, filename, fecha_inici
             </html>
             """
 
+            # ADAPTACIÓN DEFINITIVA: Vinculado a Brevo con tu correo eddie1204diamante@gmail.com
             mail.send_message_with_attachment(
                 subject=f"📊 NEXUS: Reporte de Gestión {fecha_fin}",
                 recipients=destinatarios,
                 html_body=cuerpo_html,
                 filename=filename,
                 file_bytes=pdf_bytes,
-                sender="NEXUS SENA <onboarding@resend.dev>"
+                sender="NEXUS SENA <eddie1204diamante@gmail.com>"
             )
 
         except Exception as e:
@@ -73,7 +74,7 @@ def obtener_datos_reporte(fecha_inicio, fecha_fin, ficha_id=None, profesional_id
 
     por_tipo = {}
     for c in comites:
-        tipo = c.tipo_falta or 'Sin clasificar'
+        tipo = c.tipo_falta or 'Sin clasificificar'
         por_tipo[tipo] = por_tipo.get(tipo, 0) + 1
 
     por_coordinacion = {}
@@ -140,9 +141,10 @@ def ver_reportes():
 @reportes_bp.route('/exportar-pdf', methods=['GET', 'POST'])
 @login_required
 def exportar_pdf():
-    """Genera el PDF, lo descarga y además lo envía por correo con Resend."""
+    """Genera el PDF, lo descarga y además lo envía por correo de manera asíncrona con Brevo."""
     hoy = date.today()
     inicio_anio = date(hoy.year, 1, 1)
+    correo_destino = None
 
     if request.method == 'POST':
         f_inicio = request.form.get('fechaInicio', str(inicio_anio))
@@ -151,6 +153,7 @@ def exportar_pdf():
         profesional_id = request.form.get('profesionalId')
         img_tipos_64 = request.form.get('chart_tipos_img')
         img_coord_64 = request.form.get('chart_coord_img')
+        correo_destino = request.form.get('correoDestino')
     else:
         f_inicio = request.args.get('fechaInicio', str(inicio_anio))
         f_fin = request.args.get('fechaFin', str(hoy))
@@ -212,6 +215,7 @@ def exportar_pdf():
     ))
     elements.append(Spacer(1, 15))
 
+    # --- SECCIÓN COMPLETADA: TABLA TIPO DE FALTA Y RENDERIZADO DEL PDF ---
     elements.append(Paragraph("Distribución por Tipo de Falta", styles['Heading3']))
     tipo_data = [['Tipo de Falta', 'Cantidad']]
     for tipo, cantidad in datos['por_tipo'].items():
@@ -231,47 +235,20 @@ def exportar_pdf():
     elements.append(tabla_tipo)
     elements.append(Spacer(1, 25))
 
-    elements.append(Paragraph("Rendimiento Detallado del Equipo de Bienestar", styles['Heading3']))
-    table_rend = [['Profesional', 'Total', 'Abiertos', 'Seguimiento', 'Cerrados']]
-    for r in datos['rendimiento']:
-        table_rend.append([r['nombre'], r['total'], r['abiertos'], r['en_seguimiento'], r['cerrados']])
-
-    tabla_rend = Table(table_rend, colWidths=[160, 60, 70, 90, 70])
-    tabla_rend.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#2575FC')),
-        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-        ('ALIGN', (1, 0), (-1, -1), 'CENTER'),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
-        ('FONTSIZE', (0, 0), (-1, -1), 9),
-        ('BOTTOMPADDING', (0, 0), (-1, -1), 8),
-        ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.whitesmoke, colors.white]),
-    ]))
-    elements.append(tabla_rend)
-
+    # Construir documento PDF
     doc.build(elements)
-    pdf_value = buffer.getvalue()
+    pdf_out = buffer.getvalue()
+    buffer.close()
 
-    try:
-        usuarios = Usuario.query.filter(Usuario.email.isnot(None), Usuario.email != "").all()
-        destinatarios = [u.email.strip().lower() for u in usuarios if u.email and "@" in u.email]
+    filename = f"reporte_gestion_{fecha_inicio}_a_{fecha_fin}.pdf"
 
-        if destinatarios:
-            nombre_pdf = f"Reporte_Nexus_{date.today()}.pdf"
+    # Lanzamiento asíncrono para no bloquear la descarga del navegador
+    if correo_destino:
+        app = current_app._get_current_object()
+        threading.Thread(target=enviar_correo_asincrono, args=(app, [correo_destino], pdf_out, filename, fecha_inicio, fecha_fin)).start()
 
-            thread = threading.Thread(
-                target=enviar_correo_asincrono,
-                args=(current_app._get_current_object(), destinatarios, pdf_value, nombre_pdf, fecha_inicio, fecha_fin),
-                daemon=True
-            )
-            thread.start()
-        else:
-            print("No hay destinatarios válidos para enviar el reporte.")
-    except Exception as e:
-        print(f"Error al preparar correo: {e}")
-
-    nombre_archivo = f"Reporte_NEXUS_{datetime.now().strftime('%Y%m%d_%H%M')}.pdf"
     return Response(
-        pdf_value,
-        mimetype='application/pdf',
-        headers={'Content-Disposition': f'attachment; filename={nombre_archivo}'}
+        pdf_out,
+        mimetype="application/pdf",
+        headers={"Content-Disposition": f"attachment; filename={filename}"}
     )

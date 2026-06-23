@@ -111,25 +111,36 @@
 
     .center { text-align: center !important; }
 </style>
-
 <div class="dashboard-area">
-<div class="header-tools">
-    <input type="text" id="searchInput" class="search-input"
-           onkeyup="filtrarTabla()"
-           placeholder="Buscar coordinación...">
 
-    {% if current_user.rol == 'ADMIN' %}
-        <a href="{{ url_for('coordinacion.crear_coordinacion') }}"
-           class="btn-nuevo-coord">
-            + Nueva Coordinación
-        </a>
+    <div class="actions-header">
+        <h2 style="margin:0; color:#1a202c;">
+            Gestión de Coordinaciones
+        </h2>
 
-        <a href="{{ url_for('coordinacion.importar_excel') }}"
-           class="btn-nuevo-coord">
-             Importar Excel
-        </a>
-    {% endif %}
-</div>
+        <div class="header-tools">
+
+            <input type="text"
+                   id="searchInput"
+                   class="search-input"
+                   onkeyup="filtrarTabla()"
+                   placeholder="Buscar coordinación...">
+
+            {% if current_user.rol == 'ADMIN' %}
+
+                <a href="{{ url_for('coordinacion.crear_coordinacion') }}"
+                   class="btn-nuevo-coord">
+                    + Nueva Coordinación
+                </a>
+
+                <a href="{{ url_for('coordinacion.importar_excel') }}"
+                   class="btn-importar">
+                     Importar Excel
+                </a>
+
+            {% endif %}
+
+        </div>
     </div>
 
     <div class="alerta-container">

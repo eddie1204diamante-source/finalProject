@@ -16,7 +16,6 @@ class ResendMail:
 
     def send_message(self, subject, recipients, html_body, sender=None):
         """Método rápido para enviar correos usando la API HTTPS de Resend"""
-        # Si estás en modo prueba de una sola noche, usa el remitente por defecto de Resend
         from_email = sender or "Tu App <onboarding@resend.dev>"
         
         try:
@@ -32,6 +31,31 @@ class ResendMail:
         except Exception as e:
             print(f"Error crítico al enviar correo por Resend HTTPS: {e}")
             return None
+def send_message_with_attachment(self, subject, recipients, html_body, filename, file_bytes, sender=None):
+    from_email = sender or "NEXUS SENA <onboarding@resend.dev>"
+
+    pdf_base64 = base64.b64encode(file_bytes).decode("utf-8")
+
+    params = {
+        "from": from_email,
+        "to": recipients if isinstance(recipients, list) else [recipients],
+        "subject": subject,
+        "html": html_body,
+        "attachments": [
+            {
+                "filename": filename,
+                "content": pdf_base64
+            }
+        ]
+    }
+
+    try:
+        response = resend.Emails.send(params)
+        print(f"Correo con adjunto enviado correctamente mediante Resend. ID: {response.get('id')}")
+        return response
+    except Exception as e:
+        print(f"Error crítico al enviar correo con adjunto por Resend: {e}")
+        return None
 
 # Mantienes exactamente el mismo nombre de objeto para que tus controladores no fallen
 mail = ResendMail()

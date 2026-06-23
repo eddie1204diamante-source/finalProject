@@ -4,7 +4,7 @@ from app.database import db
 from app.modules.aprendiz.models import Aprendiz
 from app.modules.ficha.models import Ficha
 from datetime import datetime, date, timedelta
-import pandas as pd  # IMPORTANTE: Asegúrate de tener instalado pandas y openpyxl
+import pandas as pd 
 
 # Blueprint nombrado como 'aprendices' para coincidir con el Dashboard
 aprendiz_bp = Blueprint('aprendices', __name__, url_prefix='/aprendices')

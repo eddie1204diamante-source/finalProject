@@ -2,6 +2,16 @@
 
 {% block content %}
 <style>
+    .btn-importar {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white !important;
+    padding: 10px 25px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+}
     /* 1. DISTRIBUCIÓN DE LA CABECERA */
     .actions-header { 
         display: flex; 
@@ -103,14 +113,23 @@
 </style>
 
 <div class="dashboard-area">
-    <div class="actions-header">
-        <h2 style="margin: 0; color: #1a202c;">Gestión de Coordinaciones</h2>
-        <div class="header-tools">
-            <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar coordinación...">
-            {% if current_user.rol == 'ADMIN' %}
-                <a href="{{ url_for('coordinacion.crear_coordinacion') }}" class="btn-nuevo-coord">+ Nueva Coordinación</a>
-            {% endif %}
-        </div>
+<div class="header-tools">
+    <input type="text" id="searchInput" class="search-input"
+           onkeyup="filtrarTabla()"
+           placeholder="Buscar coordinación...">
+
+    {% if current_user.rol == 'ADMIN' %}
+        <a href="{{ url_for('coordinacion.crear_coordinacion') }}"
+           class="btn-nuevo-coord">
+            + Nueva Coordinación
+        </a>
+
+        <a href="{{ url_for('coordinacion.importar_excel') }}"
+           class="btn-nuevo-coord">
+             Importar Excel
+        </a>
+    {% endif %}
+</div>
     </div>
 
     <div class="alerta-container">

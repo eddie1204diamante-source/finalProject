@@ -2,7 +2,7 @@ import re
 from flask import Blueprint, render_template, request, redirect, url_for, flash, current_app
 from flask_login import login_user, logout_user, login_required
 from flask_bcrypt import Bcrypt
-from flask_mail import Message
+# SE ELIMINÓ: from flask_mail import Message (Ya no la necesitamos)
 from app.database import db
 from app.modules.auth.models import Usuario, PasswordResetToken
 
@@ -32,6 +32,7 @@ def login():
             flash('Correo o contraseña incorrectos.', 'error')
             
     return render_template('auth/login.html')
+
 @auth_bp.route('/registro', methods=['GET', 'POST'])
 def registro():
     if request.method == 'POST':
@@ -95,7 +96,7 @@ def registro():
 @auth_bp.route('/recuperar-password', methods=['GET', 'POST'])
 def recuperar_password():
     if request.method == 'POST':
-        from app import mail
+        from app import mail  # Importamos tu nueva clase customizada para Resend
         email = request.form.get('email').strip().lower()
         usuario = Usuario.query.filter_by(email=email).first()
         
@@ -105,18 +106,29 @@ def recuperar_password():
             db.session.commit()
             
             try:
-                msg = Message(
-                    subject="Recuperación de Contraseña | NEXUS",
-                    sender=current_app.config['MAIL_USERNAME'], # Usa config para mayor profesionalismo
-                    recipients=[email]
-                )
                 enlace = url_for('auth.restaurar_password', token=token_obj.token, _external=True)
-                msg.body = f"Hola {usuario.nombre}, recibimos una solicitud para restablecer tu contraseña.\n\nHaz clic aquí: {enlace}\n\nEste enlace expirará en 1 hora. Si no solicitaste esto, ignora este correo."
                 
-                mail.send(msg)
+                # Creamos el cuerpo estructurado en HTML para que se envíe correctamente vía API
+                cuerpo_html = f"""
+                <p>Hola <strong>{usuario.nombre}</strong>,</p>
+                <p>Recibimos una solicitud para restablecer tu contraseña en NEXUS.</p>
+                <p>Para restaurarla, haz clic en el siguiente enlace:</p>
+                <p><a href="{enlace}" style="padding: 10px 20px; background-color: #2563eb; color: white; text-decoration: none; border-radius: 5px; display: inline-block;">Restablecer Contraseña</a></p>
+                <br>
+                <p><small>Este enlace expirará en 1 hora. Si no solicitaste esto, puedes ignorar este correo con seguridad.</small></p>
+                """
+                
+                # ADAPTACIÓN: Llamamos al método HTTPS que creamos en tu archivo principal
+                mail.send_message(
+                    subject="Recuperación de Contraseña | NEXUS",
+                    recipients=[email],
+                    html_body=cuerpo_html,
+                    sender="NEXUS <onboarding@resend.dev>"  # Cambiar por dominio propio al verificarlo
+                )
+                
                 flash('Se han enviado instrucciones a tu correo institucional.', 'success')
             except Exception as e:
-                print(f"Error al enviar correo: {e}")
+                print(f"Error al enviar correo por API: {e}")
                 flash('Hubo un problema al enviar el correo. Intenta de nuevo.', 'error')
             
             return redirect(url_for('auth.login'))

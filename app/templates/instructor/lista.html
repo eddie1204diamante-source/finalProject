@@ -39,6 +39,23 @@
         box-shadow: 0 4px 12px rgba(37, 117, 252, 0.3); 
         border: none;
     }
+    .btn-importar {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white !important;
+    padding: 10px 25px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    border: none;
+    transition: 0.3s;
+}
+
+.btn-importar:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
 
     /* 3. MENSAJES DE FEEDBACK (Sin errores de editor) */
     .msg-exito { color: #27ae60; font-weight: bold; }
@@ -109,7 +126,12 @@
             <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar instructor...">
             {% if current_user.rol == 'ADMIN' %}
                 <a href="{{ url_for('instructor.crear_instructor') }}" class="btn-nuevo-instructor">+ Nuevo Instructor</a>
-            {% endif %}
+            <a href="{{ url_for('instructor.importar_excel') }}"
+       class="btn-importar">
+            📁 Importar Excel
+        </a>
+                {% endif %}
+            
         </div>
     </div>
 

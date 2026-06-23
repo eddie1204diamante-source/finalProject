@@ -118,7 +118,7 @@
         <div class="header-tools">
             <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar aprendiz...">
             {% if current_user.rol == 'ADMIN' %}
-                <a href="{{ url_for('aprendices.importar_excel') }}" class="btn-sena btn-sena-activate" style="background: #6c757d;">Importar</a>
+                <a href="{{ url_for('aprendices.importar_excel') }}" class="btn-sena btn-sena-activate">Importar</a>
                 <a href="{{ url_for('aprendices.crear_aprendiz') }}" class="btn-nuevo-modulo">+ Nuevo Aprendiz</a>
             {% endif %}
         </div>

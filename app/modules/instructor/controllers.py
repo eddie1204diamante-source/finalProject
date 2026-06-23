@@ -3,6 +3,7 @@ from flask_login import login_required, current_user
 from app.modules.instructor.models import Instructor
 from app.modules.coordinacion.models import Coordinacion
 from app import db
+import pandas as pd
 import re
 
 # Definición del Blueprint con prefijo para rutas limpias
@@ -142,3 +143,123 @@ def cambiar_estado(id):
     db.session.commit()
     flash('Estado actualizado correctamente.', 'success')
     return redirect(url_for('instructor.listar_instructores'))
+@instructor_bp.route('/importar', methods=['GET', 'POST'])
+@login_required
+def importar_excel():
+
+    if current_user.rol != 'ADMIN':
+        flash('No tienes permisos para importar instructores.', 'danger')
+        return redirect(url_for('instructor.listar_instructores'))
+
+    if request.method == 'POST':
+
+        file = request.files.get('file')
+
+        if not file or file.filename == '':
+            flash('Seleccione un archivo Excel.', 'warning')
+            return redirect(request.url)
+
+        try:
+
+            df = pd.read_excel(file, dtype=str).fillna('')
+            df.columns = df.columns.str.strip()
+
+            columnas = {
+                'TipoDocumento',
+                'Documento',
+                'Nombres',
+                'Apellidos',
+                'Profesion',
+                'Correo',
+                'Telefono',
+                'Coordinacion'
+            }
+
+            if not columnas.issubset(df.columns):
+                flash(
+                    'El Excel no contiene todas las columnas requeridas.',
+                    'danger'
+                )
+                return redirect(request.url)
+
+            agregados = 0
+            duplicados = 0
+            errores = 0
+
+            for index, row in df.iterrows():
+
+                try:
+
+                    tipo_doc = str(row['TipoDocumento']).strip()
+                    documento = str(row['Documento']).strip()
+                    nombres = str(row['Nombres']).strip()
+                    apellidos = str(row['Apellidos']).strip()
+                    profesion = str(row['Profesion']).strip()
+                    correo = str(row['Correo']).strip().lower()
+                    telefono = str(row['Telefono']).strip()
+                    nombre_coord = str(row['Coordinacion']).strip()
+
+                    coordinacion = Coordinacion.query.filter_by(
+                        nombre=nombre_coord
+                    ).first()
+
+                    if not coordinacion:
+                        errores += 1
+                        continue
+
+                    if Instructor.query.filter_by(
+                        numero_documento=documento
+                    ).first():
+                        duplicados += 1
+                        continue
+
+                    if Instructor.query.filter_by(
+                        correo=correo
+                    ).first():
+                        duplicados += 1
+                        continue
+
+                    nuevo = Instructor(
+                        tipo_documento=tipo_doc,
+                        numero_documento=documento,
+                        nombres=nombres,
+                        apellidos=apellidos,
+                        profesion=profesion,
+                        correo=correo,
+                        telefono=telefono,
+                        coordinacion_id=coordinacion.id
+                    )
+
+                    db.session.add(nuevo)
+                    agregados += 1
+
+                except Exception as e:
+                    print(f"Error fila {index}: {e}")
+                    errores += 1
+
+            db.session.commit()
+
+            flash(
+                f'Importación completada. '
+                f'Agregados: {agregados}, '
+                f'Duplicados: {duplicados}, '
+                f'Errores: {errores}',
+                'success'
+            )
+
+            return redirect(
+                url_for('instructor.listar_instructores')
+            )
+
+        except Exception as e:
+
+            db.session.rollback()
+
+            flash(
+                f'Error al procesar archivo: {str(e)}',
+                'danger'
+            )
+
+            return redirect(request.url)
+
+    return render_template('instructor/importar.html')

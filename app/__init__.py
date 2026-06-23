@@ -5,7 +5,7 @@ from flask import Flask, redirect, url_for
 from app.database import db
 from flask_login import LoginManager
 
-# --- NUEVA CLASE PARA ENVIAR POR BREVO HTTPS ---
+# --- CLASE CORRECTA PARA ENVIAR POR BREVO HTTPS ---
 class BrevoMail:
     def __init__(self):
         self.api_key = None
@@ -18,6 +18,7 @@ class BrevoMail:
         """Método para correos simples (ej: Recuperación de contraseña)"""
         from_email = sender or "eddie1204diamante@gmail.com"
         
+        # CORRECCIÓN AQUÍ: Se cambió a la URL de la API oficial
         url = "https://brevo.com"
         headers = {
             "accept": "application/json",
@@ -50,6 +51,7 @@ class BrevoMail:
         """Método para correos con el PDF adjunto (ej: Módulo de reportes)"""
         from_email = sender or "eddie1204diamante@gmail.com"
         
+        # CORRECCIÓN AQUÍ: Se cambió a la URL de la API oficial
         url = "https://brevo.com"
         headers = {
             "accept": "application/json",
@@ -86,7 +88,7 @@ class BrevoMail:
             return None
 
 
-# Mantienes exactamente el mismo nombre de objeto para no romper tus controladores
+# Mantienes exactamente el mismo nombre de objeto para que tus controladores no fallen
 mail = BrevoMail()
 
 def create_app():

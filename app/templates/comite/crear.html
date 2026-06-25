@@ -497,7 +497,7 @@
                 
                 <div>
                     <label>Fecha Plazo Plan *</label>
-                    <input type="date" name="fecha_plazo" class="input-nexus" required>
+                    <input type="date" name="fecha_plazo" id="fecha_plazo" class="input-nexus" required>
                     <span class="error-msg">Campo requerido</span>
                 </div>
 
@@ -519,64 +519,171 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
     const fechaInput = document.getElementById('fecha');
-    
+    const fechaPlazoInput = document.getElementById('fecha_plazo');
+
+    // Configuración de fechas permitidas
     if (fechaInput) {
         const hoy = new Date();
-        const anio = hoy.getFullYear();
-        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-        
-        const fechaMaxima = `${anio}-${mes}-20`;
-        fechaInput.setAttribute('max', fechaMaxima);
-        const fechaMinima = `${anio}-${mes}-01`;
-        fechaInput.setAttribute('min', fechaMinima);
+
+        let fechaMinima;
+        let fechaMaxima;
+
+        if (hoy.getDate() <= 20) {
+            fechaMinima = hoy;
+
+            fechaMaxima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth(),
+                20
+            );
+        } else {
+            fechaMinima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth() + 1,
+                1
+            );
+
+            fechaMaxima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth() + 1,
+                20
+            );
+        }
+
+        const formato = fecha => fecha.toISOString().split('T')[0];
+
+        fechaInput.min = formato(fechaMinima);
+        fechaInput.max = formato(fechaMaxima);
+
+        if (fechaPlazoInput) {
+            fechaInput.addEventListener('change', function() {
+                fechaPlazoInput.min = this.value;
+
+                if (
+                    fechaPlazoInput.value &&
+                    fechaPlazoInput.value < this.value
+                ) {
+                    fechaPlazoInput.value = '';
+                }
+            });
+        }
     }
 
+    // Ocultar alertas automáticamente
     setTimeout(function() {
         let alerts = document.querySelectorAll('.alert');
+
         alerts.forEach(alert => {
             alert.style.transition = "opacity 0.5s ease";
             alert.style.opacity = "0";
+
             setTimeout(() => alert.remove(), 500);
         });
     }, 5000);
 
+    // Validación del formulario
     const form = document.getElementById('comiteForm');
+
     if (form) {
         form.addEventListener('submit', function(e) {
+
             let isValid = true;
-            
-            document.querySelectorAll('.error-msg').forEach(el => el.style.display = 'none');
-            document.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+
+            document.querySelectorAll('.error-msg').forEach(el => {
+                el.style.display = 'none';
+            });
+
+            document.querySelectorAll('.input-nexus').forEach(el => {
+                el.classList.remove('input-error');
+            });
 
             this.querySelectorAll('[required]').forEach(input => {
                 if (!input.value.trim()) {
                     isValid = false;
+
                     input.classList.add('input-error');
-                    let errorSpan = input.parentNode.querySelector('.error-msg');
-                    if(errorSpan) errorSpan.style.display = 'block';
+
+                    let errorSpan =
+                        input.parentNode.querySelector('.error-msg');
+
+                    if (errorSpan) {
+                        errorSpan.style.display = 'block';
+                    }
                 }
             });
 
+            // Validar fines de semana
             if (fechaInput && fechaInput.value) {
-                const fechaSeleccionada = new Date(fechaInput.value + 'T00:00:00');
-                const diaSemana = fechaSeleccionada.getDay();
-                if (diaSemana === 0 || diaSemana === 6) {
+
+                const fechaSeleccionada =
+                    new Date(fechaInput.value + 'T00:00:00');
+
+                const diaSemana =
+                    fechaSeleccionada.getDay();
+
+                if (
+                    diaSemana === 0 ||
+                    diaSemana === 6
+                ) {
                     isValid = false;
+
                     fechaInput.classList.add('input-error');
-                    alert("¡Atención! Los comités no pueden programarse los fines de semana.");
+
+                    alert(
+                        '¡Atención! Los comités no pueden programarse los fines de semana.'
+                    );
                 }
             }
 
-            const horaInput = document.getElementById('hora');
-            if (horaInput && horaInput.value) {
-                const horaCerrada = parseInt(horaInput.value.split(':')[0]);
-                if (horaCerrada < 8 || horaCerrada >= 17) {
+            // Validar fecha plazo
+            if (
+                fechaInput &&
+                fechaPlazoInput &&
+                fechaInput.value &&
+                fechaPlazoInput.value
+            ) {
+                if (
+                    fechaPlazoInput.value <
+                    fechaInput.value
+                ) {
                     isValid = false;
+
+                    fechaPlazoInput.classList.add('input-error');
+
+                    alert(
+                        'La fecha plazo no puede ser anterior a la fecha del comité.'
+                    );
+                }
+            }
+
+            // Validar horario
+            const horaInput =
+                document.getElementById('hora');
+
+            if (horaInput && horaInput.value) {
+
+                const hora =
+                    parseInt(
+                        horaInput.value.split(':')[0]
+                    );
+
+                if (
+                    hora < 8 ||
+                    hora >= 17
+                ) {
+                    isValid = false;
+
                     horaInput.classList.add('input-error');
-                    const errorHora = document.getElementById('error-hora');
+
+                    const errorHora =
+                        document.getElementById('error-hora');
+
                     if (errorHora) {
-                        errorHora.textContent = "Horario permitido: 08:00 AM - 05:00 PM";
+                        errorHora.textContent =
+                            'Horario permitido: 08:00 AM - 05:00 PM';
+
                         errorHora.style.display = 'block';
                     }
                 }
@@ -584,16 +691,23 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (!isValid) {
                 e.preventDefault();
-                const firstError = document.querySelector('.input-error');
+
+                const firstError =
+                    document.querySelector('.input-error');
+
                 if (firstError) {
-                    firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    firstError.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
                 }
             }
         });
     }
 
-    // Modal aprendices
+    // Cerrar modal al hacer clic fuera
     const modal = document.getElementById('modalAprendices');
+
     if (modal) {
         modal.addEventListener('click', function(e) {
             if (e.target === modal) {
@@ -601,29 +715,55 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
 });
 
 function abrirModalAprendices() {
-    const modal = document.getElementById('modalAprendices');
+
+    const modal =
+        document.getElementById('modalAprendices');
+
     if (modal) {
+
         modal.style.display = 'block';
-        modal.setAttribute('aria-hidden', 'false');
-        const filtro = document.getElementById('filtroAprendiz');
-        if (filtro) filtro.focus();
+
+        modal.setAttribute(
+            'aria-hidden',
+            'false'
+        );
+
+        const filtro =
+            document.getElementById('filtroAprendiz');
+
+        if (filtro) {
+            filtro.focus();
+        }
     }
 }
 
 function cerrarModalAprendices() {
-    const modal = document.getElementById('modalAprendices');
+
+    const modal =
+        document.getElementById('modalAprendices');
+
     if (modal) {
+
         modal.style.display = 'none';
-        modal.setAttribute('aria-hidden', 'true');
+
+        modal.setAttribute(
+            'aria-hidden',
+            'true'
+        );
     }
 }
 
 function seleccionarAprendiz(documento) {
-    const inputDocumento = document.getElementById('documento');
-    const formBuscar = document.getElementById('buscarForm');
+
+    const inputDocumento =
+        document.getElementById('documento');
+
+    const formBuscar =
+        document.getElementById('buscarForm');
 
     if (inputDocumento) {
         inputDocumento.value = documento;
@@ -637,16 +777,30 @@ function seleccionarAprendiz(documento) {
 }
 
 function filtrarAprendices() {
-    const filtro = document.getElementById('filtroAprendiz');
-    const tbody = document.getElementById('tbodyAprendices');
+
+    const filtro =
+        document.getElementById('filtroAprendiz');
+
+    const tbody =
+        document.getElementById('tbodyAprendices');
+
     if (!filtro || !tbody) return;
 
-    const texto = filtro.value.toUpperCase();
-    const filas = tbody.querySelectorAll('tr');
+    const texto =
+        filtro.value.toUpperCase();
+
+    const filas =
+        tbody.querySelectorAll('tr');
 
     filas.forEach(fila => {
-        const contenido = fila.textContent.toUpperCase();
-        fila.style.display = contenido.includes(texto) ? '' : 'none';
+
+        const contenido =
+            fila.textContent.toUpperCase();
+
+        fila.style.display =
+            contenido.includes(texto)
+                ? ''
+                : 'none';
     });
 }
 </script>

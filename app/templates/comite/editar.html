@@ -198,62 +198,261 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+
     const form = document.getElementById('comiteForm');
     const fechaInput = document.getElementById('fecha');
+    const fechaPlazoInput = document.querySelector(
+        'input[name="fecha_plazo"]'
+    );
+    const horaInput = document.getElementById('hora');
     const helper = document.getElementById('helper-fecha');
-    
-    // Lógica de Calendario (Día 20)
-    const hoy = new Date();
-    const diaActual = hoy.getDate();
-    let minF, maxF;
 
-    if (diaActual <= 20) {
-        minF = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        maxF = new Date(hoy.getFullYear(), hoy.getMonth(), 20);
-        helper.textContent = "Periodo abierto: disponible hasta el día 20.";
-        helper.style.color = "#38a169";
-    } else {
-        minF = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 1);
-        maxF = new Date(hoy.getFullYear(), hoy.getMonth() + 1, 20);
-        helper.textContent = "Plazo del mes vencido. Agendando para el mes siguiente.";
-        helper.style.color = "#e53e3e";
+    // ==========================
+    // REGLA DEL DÍA 20
+    // ==========================
+    if (fechaInput) {
+
+        const hoy = new Date();
+
+        let fechaMinima;
+        let fechaMaxima;
+
+        if (hoy.getDate() <= 20) {
+
+            fechaMinima = hoy;
+
+            fechaMaxima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth(),
+                20
+            );
+
+            if (helper) {
+                helper.textContent =
+                    'Periodo abierto: disponible hasta el día 20.';
+                helper.style.color = '#38a169';
+            }
+
+        } else {
+
+            fechaMinima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth() + 1,
+                1
+            );
+
+            fechaMaxima = new Date(
+                hoy.getFullYear(),
+                hoy.getMonth() + 1,
+                20
+            );
+
+            if (helper) {
+                helper.textContent =
+                    'Plazo del mes vencido. Agendando para el mes siguiente.';
+                helper.style.color = '#e53e3e';
+            }
+        }
+
+        const formato = fecha =>
+            fecha.toISOString().split('T')[0];
+
+        fechaInput.min = formato(fechaMinima);
+        fechaInput.max = formato(fechaMaxima);
+
+        if (fechaPlazoInput) {
+
+            fechaPlazoInput.min =
+                fechaInput.value;
+
+            fechaInput.addEventListener(
+                'change',
+                function() {
+
+                    fechaPlazoInput.min =
+                        this.value;
+
+                    if (
+                        fechaPlazoInput.value &&
+                        fechaPlazoInput.value < this.value
+                    ) {
+                        fechaPlazoInput.value = '';
+                    }
+                }
+            );
+        }
     }
 
-    const fmt = (d) => d.toISOString().split('T')[0];
-    fechaInput.setAttribute('min', fmt(minF));
-    fechaInput.setAttribute('max', fmt(maxF));
+    // ==========================
+    // OCULTAR ALERTAS
+    // ==========================
+    setTimeout(function() {
 
-    // Validación al enviar
-    form.addEventListener('submit', function(e) {
-        let isValid = true;
-        
-        // Limpiar errores previos
-        this.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+        document
+            .querySelectorAll('.alert')
+            .forEach(alert => {
 
-        // Validar requeridos
-        this.querySelectorAll('[required]').forEach(input => {
-            if (!input.value.trim()) {
-                isValid = false;
-                input.classList.add('input-error');
+                alert.style.transition =
+                    'opacity 0.5s ease';
+
+                alert.style.opacity = '0';
+
+                setTimeout(
+                    () => alert.remove(),
+                    500
+                );
+            });
+
+    }, 5000);
+
+    // ==========================
+    // VALIDACIÓN FORMULARIO
+    // ==========================
+    if (form) {
+
+        form.addEventListener('submit', function(e) {
+
+            let isValid = true;
+
+            document
+                .querySelectorAll('.input-nexus')
+                .forEach(input => {
+                    input.classList.remove(
+                        'input-error'
+                    );
+                });
+
+            // Campos obligatorios
+            this.querySelectorAll('[required]')
+                .forEach(input => {
+
+                    if (!input.value.trim()) {
+
+                        isValid = false;
+
+                        input.classList.add(
+                            'input-error'
+                        );
+                    }
+                });
+
+            // =====================
+            // FECHA FIN DE SEMANA
+            // =====================
+            if (
+                fechaInput &&
+                fechaInput.value
+            ) {
+
+                const fechaSeleccionada =
+                    new Date(
+                        fechaInput.value +
+                        'T00:00:00'
+                    );
+
+                const diaSemana =
+                    fechaSeleccionada.getDay();
+
+                if (
+                    diaSemana === 0 ||
+                    diaSemana === 6
+                ) {
+
+                    isValid = false;
+
+                    fechaInput.classList.add(
+                        'input-error'
+                    );
+
+                    alert(
+                        'Los comités no pueden programarse los fines de semana.'
+                    );
+                }
             }
+
+            // =====================
+            // FECHA PLAZO
+            // =====================
+            if (
+                fechaInput &&
+                fechaPlazoInput &&
+                fechaInput.value &&
+                fechaPlazoInput.value
+            ) {
+
+                if (
+                    fechaPlazoInput.value <
+                    fechaInput.value
+                ) {
+
+                    isValid = false;
+
+                    fechaPlazoInput.classList.add(
+                        'input-error'
+                    );
+
+                    alert(
+                        'La fecha plazo no puede ser anterior a la fecha del comité.'
+                    );
+                }
+            }
+
+            // =====================
+            // HORARIO
+            // =====================
+            if (
+                horaInput &&
+                horaInput.value
+            ) {
+
+                const hora =
+                    parseInt(
+                        horaInput.value.split(':')[0]
+                    );
+
+                if (
+                    hora < 8 ||
+                    hora >= 17
+                ) {
+
+                    isValid = false;
+
+                    horaInput.classList.add(
+                        'input-error'
+                    );
+
+                    alert(
+                        'Horario permitido: 08:00 AM a 05:00 PM.'
+                    );
+                }
+            }
+
+            // =====================
+            // DETENER ENVÍO
+            // =====================
+            if (!isValid) {
+
+                e.preventDefault();
+
+                const primerError =
+                    document.querySelector(
+                        '.input-error'
+                    );
+
+                if (primerError) {
+
+                    primerError.focus();
+
+                    primerError.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+                }
+            }
+
         });
+    }
 
-        // Validar Hora
-        const horaVal = document.getElementById('hora').value;
-        if (horaVal) {
-            const h = parseInt(horaVal.split(':')[0]);
-            if (h < 8 || h >= 17) {
-                isValid = false;
-                document.getElementById('hora').classList.add('input-error');
-            }
-        }
-
-        if (!isValid) {
-            e.preventDefault();
-            const firstError = document.querySelector('.input-error');
-            if (firstError) firstError.focus();
-        }
-    });
 });
 </script>
 {% endblock %}

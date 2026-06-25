@@ -1,3 +1,5 @@
+from app.database import db
+
 class Instructor(db.Model):
     __tablename__ = 'instructores'
 

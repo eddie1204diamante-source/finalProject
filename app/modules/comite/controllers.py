@@ -4,7 +4,7 @@ from app.database import db
 from app.modules.comite.models import Comite
 from app.modules.aprendiz.models import Aprendiz
 from app.modules.instructor.models import Instructor
-from app.modules.auth.models import Usuario  
+from app.modules.auth.models import Usuario
 from datetime import datetime, date
 
 comite_bp = Blueprint('comite', __name__)
@@ -20,7 +20,6 @@ def preparar_datos_aprendiz(aprendiz):
     if not aprendiz:
         return None
     
-    # 1. Cálculo de edad
     if hasattr(aprendiz, 'fecha_nacimiento') and aprendiz.fecha_nacimiento:
         hoy = date.today()
         aprendiz.edad = hoy.year - aprendiz.fecha_nacimiento.year - (
@@ -29,8 +28,6 @@ def preparar_datos_aprendiz(aprendiz):
     else:
         aprendiz.edad = "N/A"
     
-    # 2. Mapeo de atributos (Base de datos -> Vista)
-    # Se usa getattr por si el campo no existe en el modelo legacy
     aprendiz.email = getattr(aprendiz, 'correo', 'N/A')
     aprendiz.telefono = getattr(aprendiz, 'celular', 'N/A')
     return aprendiz
@@ -48,8 +45,14 @@ def crear():
         flash('No tiene permisos para acceder al módulo de comités.', 'danger')
         return redirect(url_for('main.dashboard'))
 
-    profesionales = Usuario.query.filter(Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']), Usuario.enabled.is_(True)).all()
+    profesionales = Usuario.query.filter(
+        Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']),
+        Usuario.enabled.is_(True)
+    ).all()
     instructores = Instructor.query.filter_by(activo=1).all()
+    aprendices_activos = Aprendiz.query.filter_by(activo=True).order_by(
+        Aprendiz.nombres
+    ).all()
 
     aprendiz = None
     vocero = None
@@ -60,13 +63,24 @@ def crear():
         
         if not aprendiz:
             flash(f'No se encontró ningún aprendiz con el documento: {documento}', 'danger')
-            return render_template('comite/crear.html', instructores=instructores, profesionales=profesionales, documento=documento)
+            return render_template(
+                'comite/crear.html',
+                instructores=instructores,
+                profesionales=profesionales,
+                aprendices_activos=aprendices_activos,
+                documento=documento
+            )
         
         if aprendiz.es_vocero:
             flash(f'Atención: {aprendiz.nombres} es vocero activo. No se puede citar a comité a un vocero.', 'warning')
-            return render_template('comite/crear.html', instructores=instructores, profesionales=profesionales, documento=documento)
+            return render_template(
+                'comite/crear.html',
+                instructores=instructores,
+                profesionales=profesionales,
+                aprendices_activos=aprendices_activos,
+                documento=documento
+            )
         
-        # Preparar datos para el banner
         aprendiz = preparar_datos_aprendiz(aprendiz)
         
         vocero = Aprendiz.query.filter_by(
@@ -81,16 +95,13 @@ def crear():
             fecha_comite = datetime.strptime(f_str, '%Y-%m-%d').date() if f_str else None
             hoy = date.today()
             
-            # Validación de Regla del Día 20
             if fecha_comite:
                 if hoy.day > 20:
-                    # Debe ser el mes siguiente
                     proximo_mes = hoy.month + 1 if hoy.month < 12 else 1
                     if fecha_comite.month != proximo_mes:
                         flash("Error: Después del día 20, la citación debe ser para el próximo mes.", "danger")
                         return redirect(url_for('comite.crear', documento=documento))
                 else:
-                    # Debe ser el mes actual
                     if fecha_comite.month != hoy.month:
                         flash("Error: Solo puede programar comités para el mes en curso.", "danger")
                         return redirect(url_for('comite.crear', documento=documento))
@@ -127,12 +138,15 @@ def crear():
             db.session.rollback()
             flash(f'Error al guardar el comité: {str(e)}', 'danger')
 
-    return render_template('comite/crear.html', 
-                           aprendiz=aprendiz, 
-                           vocero=vocero, 
-                           instructores=instructores, 
-                           profesionales=profesionales, 
-                           documento=documento)
+    return render_template(
+        'comite/crear.html',
+        aprendiz=aprendiz,
+        vocero=vocero,
+        instructores=instructores,
+        profesionales=profesionales,
+        aprendices_activos=aprendices_activos,
+        documento=documento
+    )
 
 @comite_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
@@ -149,7 +163,6 @@ def editar(id):
             nueva_fecha = datetime.strptime(f_str, '%Y-%m-%d').date() if f_str else None
             hoy = date.today()
             
-            # Validación de Regla del Día 20 (Servidor)
             if nueva_fecha:
                 if hoy.day > 20:
                     proximo_mes = hoy.month + 1 if hoy.month < 12 else 1
@@ -161,7 +174,6 @@ def editar(id):
                         flash("Error: La fecha debe pertenecer al mes actual.", "danger")
                         return redirect(url_for('comite.editar', id=id))
 
-            # Actualización de campos
             comite.fecha = nueva_fecha
             comite.hora = datetime.strptime(request.form.get('hora'), '%H:%M').time() if request.form.get('hora') else comite.hora
             comite.sede = request.form.get('sede', '').strip()
@@ -189,18 +201,21 @@ def editar(id):
             flash(f'Error al actualizar: {str(e)}', 'danger')
             return redirect(url_for('comite.editar', id=id))
 
-    # Carga de datos para el banner y selects
-    profesionales = Usuario.query.filter(Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']), Usuario.enabled.is_(True)).all()
+    profesionales = Usuario.query.filter(
+        Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']),
+        Usuario.enabled.is_(True)
+    ).all()
     instructores = Instructor.query.filter_by(activo=1).all()
     
-    # Normalizamos el aprendiz del comité para el banner
     aprendiz = preparar_datos_aprendiz(comite.aprendiz)
     
-    return render_template('comite/editar.html', 
-                           comite=comite, 
-                           aprendiz=aprendiz, 
-                           profesionales=profesionales, 
-                           instructores=instructores)
+    return render_template(
+        'comite/editar.html',
+        comite=comite,
+        aprendiz=aprendiz,
+        profesionales=profesionales,
+        instructores=instructores
+    )
 
 @comite_bp.route('/cambiar_estado/<int:id>')
 @login_required

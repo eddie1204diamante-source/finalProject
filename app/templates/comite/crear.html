@@ -5,12 +5,46 @@
     /* Reset de box-sizing para que nada se salga */
     .form-container, .form-container * { box-sizing: border-box; }
     
-    .form-container { background: white; border-radius: 15px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); max-width: 1000px; margin: 0 auto; width: 100%; }
-    .form-title { font-weight: 800; color: #1a202c; margin-bottom: 25px; }
+    .form-container {
+        background: white;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        max-width: 1000px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .form-title {
+        font-weight: 800;
+        color: #1a202c;
+        margin-bottom: 25px;
+    }
     
-    .search-box { display: flex; gap: 10px; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 1px solid #edf2f7; }
-    .input-nexus { width: 100%; padding: 12px 15px; border-radius: 10px; border: 1px solid #e2e8f0; outline: none; transition: 0.3s; font-size: 0.9rem; background: #fff; }
-    .input-nexus:focus { border-color: #2575FC; box-shadow: 0 0 0 3px rgba(37,117,252,0.1); }
+    .search-box {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 18px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #edf2f7;
+        align-items: center;
+    }
+
+    .input-nexus {
+        width: 100%;
+        padding: 12px 15px;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        outline: none;
+        transition: 0.3s;
+        font-size: 0.9rem;
+        background: #fff;
+    }
+
+    .input-nexus:focus {
+        border-color: #2575FC;
+        box-shadow: 0 0 0 3px rgba(37,117,252,0.1);
+    }
     
     /* ALERTAS (MENSAJES FLASH) */
     .alert { 
@@ -22,6 +56,7 @@
         border: 1px solid transparent;
         animation: slideIn 0.3s ease-out;
     }
+
     .alert-success { background-color: #f0fff4; color: #38a169; border-color: #9ae6b4; }
     .alert-danger { background-color: #fff5f5; color: #e53e3e; border-color: #feb2b2; }
     .alert-warning { background-color: #fffaf0; color: #9c4221; border-color: #feebc8; }
@@ -35,33 +70,238 @@
     .error-msg { color: #e53e3e; font-size: 0.75rem; font-weight: 700; margin-top: 4px; display: none; }
 
     /* Banner de Información */
-    .info-card { background: #f8faff; border-left: 5px solid #6A11CB; padding: 20px; border-radius: 12px; margin-bottom: 25px; width: 100%; }
-    .info-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; }
-    .info-item { display: flex; flex-direction: column; overflow: hidden; }
-    .info-label { font-size: 0.7rem; text-transform: uppercase; color: #718096; font-weight: 800; margin-bottom: 2px; }
-    .info-value { color: #2d3748; font-weight: 700; font-size: 0.9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .info-card {
+        background: #f8faff;
+        border-left: 5px solid #6A11CB;
+        padding: 20px;
+        border-radius: 12px;
+        margin-bottom: 25px;
+        width: 100%;
+    }
+
+    .info-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 15px;
+    }
+
+    .info-item {
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
+    .info-label {
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        color: #718096;
+        font-weight: 800;
+        margin-bottom: 2px;
+    }
+
+    .info-value {
+        color: #2d3748;
+        font-weight: 700;
+        font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
 
     /* Layout del Formulario */
-    .grid-fields { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; width: 100%; }
+    .grid-fields {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 20px;
+        width: 100%;
+    }
+
     .full-width { grid-column: span 3; }
     .half-width { grid-column: span 2; }
     
-    label { display: block; margin-bottom: 6px; font-weight: 700; color: #4a5568; font-size: 0.85rem; }
-    textarea.input-nexus { height: 80px; resize: vertical; min-height: 60px; }
+    label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 700;
+        color: #4a5568;
+        font-size: 0.85rem;
+    }
+
+    textarea.input-nexus {
+        height: 80px;
+        resize: vertical;
+        min-height: 60px;
+    }
 
     .btn-nexus-form { 
-        background: linear-gradient(135deg, #6A11CB, #2575FC); color: white !important; 
-        padding: 12px 30px; border-radius: 50px; border: none; font-weight: bold; cursor: pointer;
+        background: linear-gradient(135deg, #6A11CB, #2575FC);
+        color: white !important; 
+        padding: 12px 30px;
+        border-radius: 50px;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
         transition: 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
     }
-    .btn-nexus-form:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,117,252,0.2); }
+
+    .btn-nexus-form:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(37,117,252,0.2);
+    }
 
     .btn-cancelar { 
-        color: #718096; text-decoration: none; font-weight: 700; 
-        padding: 12px 25px; border-radius: 50px; border: 1px solid #e2e8f0;
-        transition: 0.3s; display: inline-block;
+        color: #718096;
+        text-decoration: none;
+        font-weight: 700; 
+        padding: 12px 25px;
+        border-radius: 50px;
+        border: 1px solid #e2e8f0;
+        transition: 0.3s;
+        display: inline-block;
+        background: #fff;
     }
-    .btn-cancelar:hover { background: #f7fafc; color: #2d3748; border-color: #cbd5e0; }
+
+    .btn-cancelar:hover {
+        background: #f7fafc;
+        color: #2d3748;
+        border-color: #cbd5e0;
+    }
+
+    .btn-aprendices {
+        background: #16a34a;
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        white-space: nowrap;
+    }
+
+    .btn-aprendices:hover {
+        background: #15803d;
+        transform: translateY(-1px);
+    }
+
+    /* Modal de aprendices */
+    .modal-aprendices {
+        display: none;
+        position: fixed;
+        z-index: 9999;
+        inset: 0;
+        background: rgba(15, 23, 42, 0.55);
+        padding: 20px;
+    }
+
+    .modal-contenido {
+        background: white;
+        max-width: 950px;
+        width: 100%;
+        margin: 40px auto;
+        border-radius: 18px;
+        padding: 22px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.25);
+        max-height: 80vh;
+        overflow: auto;
+    }
+
+    .modal-header-aprendices {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 10px;
+        margin-bottom: 15px;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .modal-header-aprendices h3 {
+        margin: 0;
+        color: #1a202c;
+        font-size: 1.2rem;
+    }
+
+    .cerrar-modal {
+        background: #f1f5f9;
+        color: #334155;
+        border: none;
+        width: 36px;
+        height: 36px;
+        border-radius: 999px;
+        font-size: 1.4rem;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .cerrar-modal:hover {
+        background: #e2e8f0;
+    }
+
+    .filtro-aprendiz {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+
+    .tabla-aprendices {
+        width: 100%;
+        border-collapse: collapse;
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+
+    .tabla-aprendices th {
+        background: #f8fafc;
+        text-align: left;
+        padding: 12px;
+        border-bottom: 1px solid #e2e8f0;
+        color: #334155;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+    }
+
+    .tabla-aprendices td {
+        padding: 12px;
+        border-bottom: 1px solid #edf2f7;
+        font-size: 0.9rem;
+    }
+
+    .tabla-aprendices tbody tr {
+        cursor: pointer;
+        transition: 0.15s;
+    }
+
+    .tabla-aprendices tbody tr:hover {
+        background: #f8faff;
+    }
+
+    .tabla-aprendices .btn-seleccionar {
+        padding: 8px 14px;
+        font-size: 0.8rem;
+    }
+
+    .subtexto {
+        color: #64748b;
+        font-size: 0.85rem;
+        margin: 0 0 16px 0;
+    }
+
+    @media (max-width: 640px) {
+        .grid-fields { grid-template-columns: 1fr; }
+        .form-container { padding: 20px; }
+        .full-width, .half-width { grid-column: span 1; }
+        .search-box { flex-direction: column; align-items: stretch; }
+        .info-grid { grid-template-columns: 1fr; }
+        .modal-contenido { margin: 10px auto; padding: 16px; }
+        .tabla-aprendices th, .tabla-aprendices td { font-size: 0.8rem; padding: 10px; }
+    }
 </style>
 
 <div class="dashboard-area">
@@ -78,10 +318,54 @@
           {% endif %}
         {% endwith %}
 
-        <form method="GET" action="{{ url_for('comite.crear') }}" class="search-box">
-            <input type="text" name="documento" class="input-nexus" placeholder="Documento del aprendiz..." value="{{ documento or '' }}" required>
+        <form method="GET" action="{{ url_for('comite.crear') }}" class="search-box" id="buscarForm">
+            <input type="text" name="documento" id="documento" class="input-nexus" placeholder="Documento del aprendiz..." value="{{ documento or '' }}" required>
             <button type="submit" class="btn-nexus-form">Buscar</button>
+            <button type="button" class="btn-aprendices" onclick="abrirModalAprendices()">👥 Aprendices</button>
         </form>
+
+        <!-- Modal de aprendices activos -->
+        <div id="modalAprendices" class="modal-aprendices" aria-hidden="true">
+            <div class="modal-contenido">
+                <div class="modal-header-aprendices">
+                    <h3>Aprendices Activos</h3>
+                    <button type="button" class="cerrar-modal" onclick="cerrarModalAprendices()">&times;</button>
+                </div>
+
+                <p class="subtexto">Busca un aprendiz y haz clic en “Seleccionar” para cargar su documento.</p>
+
+                <input
+                    type="text"
+                    id="filtroAprendiz"
+                    class="input-nexus filtro-aprendiz"
+                    placeholder="Filtrar por nombre o documento..."
+                    onkeyup="filtrarAprendices()"
+                >
+
+                <table class="tabla-aprendices">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Ficha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAprendices">
+                        {% for a in aprendices_activos %}
+                        <tr onclick="seleccionarAprendiz('{{ a.numero_documento }}')">
+                            <td>{{ a.numero_documento }}</td>
+                            <td>{{ a.nombres }} {{ a.apellidos }}</td>
+                            <td>{{ a.ficha.codigo if a.ficha else 'N/A' }}</td>
+                            <td>
+                                <button type="button" class="btn-nexus-form btn-seleccionar">Seleccionar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         {% if aprendiz %}
         <div class="info-card">
@@ -237,17 +521,17 @@
 document.addEventListener('DOMContentLoaded', function() {
     const fechaInput = document.getElementById('fecha');
     
-    // --- LÓGICA DE RESTRICCIÓN DE FECHA ---
-    const hoy = new Date();
-    const anio = hoy.getFullYear();
-    const mes = String(hoy.getMonth() + 1).padStart(2, '0');
-    
-    const fechaMaxima = `${anio}-${mes}-20`;
-    fechaInput.setAttribute('max', fechaMaxima);
-    const fechaMinima = `${anio}-${mes}-01`;
-    fechaInput.setAttribute('min', fechaMinima);
+    if (fechaInput) {
+        const hoy = new Date();
+        const anio = hoy.getFullYear();
+        const mes = String(hoy.getMonth() + 1).padStart(2, '0');
+        
+        const fechaMaxima = `${anio}-${mes}-20`;
+        fechaInput.setAttribute('max', fechaMaxima);
+        const fechaMinima = `${anio}-${mes}-01`;
+        fechaInput.setAttribute('min', fechaMinima);
+    }
 
-    // Auto-cerrar alertas flash
     setTimeout(function() {
         let alerts = document.querySelectorAll('.alert');
         alerts.forEach(alert => {
@@ -274,7 +558,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             });
 
-            if (fechaInput.value) {
+            if (fechaInput && fechaInput.value) {
                 const fechaSeleccionada = new Date(fechaInput.value + 'T00:00:00');
                 const diaSemana = fechaSeleccionada.getDay();
                 if (diaSemana === 0 || diaSemana === 6) {
@@ -285,14 +569,16 @@ document.addEventListener('DOMContentLoaded', function() {
             }
 
             const horaInput = document.getElementById('hora');
-            if (horaInput.value) {
+            if (horaInput && horaInput.value) {
                 const horaCerrada = parseInt(horaInput.value.split(':')[0]);
                 if (horaCerrada < 8 || horaCerrada >= 17) {
                     isValid = false;
                     horaInput.classList.add('input-error');
                     const errorHora = document.getElementById('error-hora');
-                    errorHora.textContent = "Horario permitido: 08:00 AM - 05:00 PM";
-                    errorHora.style.display = 'block';
+                    if (errorHora) {
+                        errorHora.textContent = "Horario permitido: 08:00 AM - 05:00 PM";
+                        errorHora.style.display = 'block';
+                    }
                 }
             }
 
@@ -305,6 +591,63 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // Modal aprendices
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModalAprendices();
+            }
+        });
+    }
 });
+
+function abrirModalAprendices() {
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.style.display = 'block';
+        modal.setAttribute('aria-hidden', 'false');
+        const filtro = document.getElementById('filtroAprendiz');
+        if (filtro) filtro.focus();
+    }
+}
+
+function cerrarModalAprendices() {
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function seleccionarAprendiz(documento) {
+    const inputDocumento = document.getElementById('documento');
+    const formBuscar = document.getElementById('buscarForm');
+
+    if (inputDocumento) {
+        inputDocumento.value = documento;
+    }
+
+    cerrarModalAprendices();
+
+    if (formBuscar) {
+        formBuscar.submit();
+    }
+}
+
+function filtrarAprendices() {
+    const filtro = document.getElementById('filtroAprendiz');
+    const tbody = document.getElementById('tbodyAprendices');
+    if (!filtro || !tbody) return;
+
+    const texto = filtro.value.toUpperCase();
+    const filas = tbody.querySelectorAll('tr');
+
+    filas.forEach(fila => {
+        const contenido = fila.textContent.toUpperCase();
+        fila.style.display = contenido.includes(texto) ? '' : 'none';
+    });
+}
 </script>
 {% endblock %}

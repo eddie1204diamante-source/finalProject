@@ -62,6 +62,18 @@ def validar_aforo(aforo_str):
         return None, False, "El aforo debe ser un número entero."
 
 
+def validar_asistentes(asistentes_str, aforo):
+    try:
+        asistentes = int(asistentes_str)
+        if asistentes < 0:
+            return None, False, "Los asistentes no pueden ser negativos."
+        if asistentes > aforo:
+            return None, False, "Los asistentes no pueden superar el aforo."
+        return asistentes, True, ""
+    except (TypeError, ValueError):
+        return None, False, "Los asistentes deben ser un número entero."
+
+
 def evitar_duplicado(instructor_id, fecha, id_excluir=None):
     try:
         instructor_id = int(instructor_id)
@@ -110,7 +122,6 @@ def crear():
         aforo_str = request.form.get('aforo', '').strip()
         fecha_str = request.form.get('fecha_programada', '').strip()
 
-        # Validación básica
         if not nombre or not instructor_id or not aforo_str or not fecha_str:
             flash('Todos los campos son obligatorios.', 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
@@ -222,6 +233,7 @@ def editar(id):
         aforo_str = request.form.get('aforo', '').strip()
         fecha_str = request.form.get('fecha_programada', '').strip()
         nuevo_estado = request.form.get('estado', taller.estado)
+        asistentes_str = request.form.get('asistentes', '0').strip()
 
         if not nombre or not instructor_id or not aforo_str or not fecha_str:
             flash('Todos los campos son obligatorios.', 'danger')
@@ -267,6 +279,17 @@ def editar(id):
             )
 
         aforo, valido, msg = validar_aforo(aforo_str)
+        if not valido:
+            flash(msg, 'danger')
+            instructores = Instructor.query.filter_by(activo=True).all()
+            return render_template(
+                'taller/editar.html',
+                taller=taller,
+                instructores=instructores,
+                hoy=date.today().isoformat()
+            )
+
+        asistentes, valido, msg = validar_asistentes(asistentes_str, aforo)
         if not valido:
             flash(msg, 'danger')
             instructores = Instructor.query.filter_by(activo=True).all()
@@ -324,6 +347,7 @@ def editar(id):
         taller.descripcion = descripcion
         taller.instructor_id = instructor.id
         taller.aforo = aforo
+        taller.asistentes = asistentes
         taller.fecha_programada = fecha
         taller.estado = nuevo_estado
 
@@ -356,11 +380,10 @@ def editar(id):
 def cambiar_estado(id):
     taller = Taller.query.get_or_404(id)
     hoy = date.today()
-    ahora = datetime.now()
 
     if taller.estado != 'Cancelado':
         taller.estado = 'Cancelado'
-        flash(f'Taller "{taller.nombre}" cancelado.', 'warning')
+        flash(f'El taller "{taller.nombre}" fue cancelado correctamente.', 'warning')
     else:
         if taller.fecha_programada.date() < hoy:
             flash('No se puede reactivar un taller con fecha pasada.', 'danger')
@@ -371,7 +394,7 @@ def cambiar_estado(id):
             return redirect(url_for('talleres.index'))
 
         taller.estado = 'Programado'
-        flash(f'Taller "{taller.nombre}" reactivado.', 'success')
+        flash(f'El taller "{taller.nombre}" fue reactivado correctamente.', 'success')
 
     db.session.commit()
     return redirect(url_for('talleres.index'))

@@ -135,6 +135,20 @@
                 <label>👥 Aforo *</label>
                 <input type="number" name="aforo" class="form-control-fixed" min="1" max="1000" value="{{ taller.aforo }}" required>
             </div>
+            <div class="form-group-fixed">
+    <label>🙋 Asistentes</label>
+    <input
+        type="number"
+        name="asistentes"
+        class="form-control-fixed"
+        min="0"
+        max="{{ taller.aforo }}"
+        value="{{ taller.asistentes if taller.asistentes is not none else 0 }}"
+    >
+    <small style="color:#64748b; margin-top:5px;">
+        No puede superar el aforo del taller.
+    </small>
+</div>
 
             <div class="form-group-fixed">
                 <label>📅 Fecha Programada *</label>
@@ -171,6 +185,7 @@
         const estado = document.querySelector('select[name="estado"]').value;
         const nombre = document.querySelector('input[name="nombre"]').value.trim();
         const aforo = parseInt(document.querySelector('input[name="aforo"]').value, 10);
+        const asistentes = parseInt(document.querySelector('input[name="asistentes"]').value || 0,10);
 
         if (nombre.length < 3) {
             alert('El nombre debe tener al menos 3 caracteres.');
@@ -180,6 +195,16 @@
 
         if (!aforo || aforo < 1) {
             alert('El aforo debe ser mayor a 0.');
+            e.preventDefault();
+            return;
+        }if (asistentes < 0) {
+            alert('Los asistentes no pueden ser negativos.');
+            e.preventDefault();
+            return;
+        }
+
+        if (asistentes > aforo) {
+            alert('Los asistentes no pueden superar el aforo.');
             e.preventDefault();
             return;
         }

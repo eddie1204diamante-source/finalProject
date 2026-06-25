@@ -35,6 +35,11 @@ class Taller(db.Model):
         nullable=False,
         default='Programado'
     )
+    asistentes = db.Column(
+        db.Integer,
+        nullable=False,
+        default=0
+    )
 
     def __repr__(self):
         return f'<Taller {self.nombre}>'

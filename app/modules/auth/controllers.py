@@ -108,7 +108,7 @@ def recuperar_password():
                 <p><small>Este enlace expirará en 1 hora. Si no solicitaste esto, puedes ignorar este correo con seguridad.</small></p>
                 """
                 
-                # ADAPTACIÓN DEFINITIVA: Vinculado a Brevo HTTPS con tu remitente verificado
+                
                 mail.send_message(
                 subject="Recuperación de Contraseña | NEXUS",
                 recipients=[email],

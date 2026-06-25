@@ -114,6 +114,10 @@
     border: none;
     transition: 0.3s;
 }
+.btn-importar:hover {
+    transform: translateY(-2px);
+    opacity: 0.95;
+}
 </style>
 
 <div class="dashboard-area">
@@ -123,7 +127,7 @@
             <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar ficha...">
             {% if current_user.rol == 'ADMIN' %}
                 <a href="{{ url_for('ficha.crear_ficha') }}" class="btn-nuevo-ficha">+ Nueva Ficha</a>
-                <a href="{{ url_for('ficha.importar_excel') }}" class=".btn-importar">
+                <a href="{{ url_for('ficha.importar_excel') }}" class="btn-importar">
     Importar Excel
 </a>
             {% endif %}

@@ -450,31 +450,213 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     const form = document.getElementById('atencionForm');
-    if (form) {
-        form.addEventListener('submit', function(e) {
-            let isValid = true;
 
-            document.querySelectorAll('.error-campo').forEach(el => {
-                if (el.style.display !== 'block') el.style.display = 'none';
-            });
-            document.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+if (form) {
 
-            this.querySelectorAll('[required]').forEach(input => {
-                if (!input.value.trim()) {
-                    isValid = false;
-                    input.classList.add('input-error');
-                    const errorSpan = input.parentNode.querySelector('.error-campo');
-                    if (errorSpan) errorSpan.style.display = 'block';
+    form.addEventListener('submit', function(e){
+
+        let errores = [];
+
+        document.querySelectorAll('.input-error').forEach(el=>{
+            el.classList.remove('input-error');
+        });
+
+        function marcarError(campo,mensaje){
+
+            campo.classList.add('input-error');
+
+            errores.push(mensaje);
+        }
+
+        const profesional = document.querySelector('[name="usuario_id"]');
+        const categoria = document.querySelector('[name="categoria_desercion"]');
+        const remitido = document.querySelector('[name="remitido_por"]');
+
+        const fecha1 = document.querySelector('[name="fecha_consulta_1"]');
+        const fecha2 = document.querySelector('[name="fecha_consulta_2"]');
+        const fecha3 = document.querySelector('[name="fecha_consulta_3"]');
+
+        const obs1 = document.querySelector('[name="observaciones_1"]');
+        const obs2 = document.querySelector('[name="observaciones_2"]');
+        const obs3 = document.querySelector('[name="observaciones_3"]');
+
+        const estadoCaso = document.querySelector('[name="estado_caso"]');
+        const edad = parseInt(document.getElementById('edadAprendiz')?.value || 0);
+
+        const atencionFamiliar = document.getElementById('atencionFamiliar');
+
+        /* PROFESIONAL */
+
+        if(!profesional.value){
+            marcarError(profesional,"Debe seleccionar un profesional.");
+        }
+
+        /* CATEGORÍA */
+
+        if(!categoria.value){
+            marcarError(categoria,"Debe seleccionar una categoría.");
+        }
+
+        /* REMITIDO */
+
+        if(remitido.value.trim().length < 5){
+            marcarError(remitido,"Remitido por debe tener mínimo 5 caracteres.");
+        }
+
+        if(remitido.value.length > 100){
+            marcarError(remitido,"Remitido por supera el límite permitido.");
+        }
+
+        /* FECHA CONSULTA 1 */
+
+        if(!fecha1.value){
+            marcarError(fecha1,"La primera consulta es obligatoria.");
+        }
+
+        /* OBSERVACIÓN 1 */
+
+        if(obs1.value.trim().length < 20){
+            marcarError(
+                obs1,
+                "La observación de la primera consulta debe tener mínimo 20 caracteres."
+            );
+        }
+
+        if(obs1.value.trim().length > 1000){
+            marcarError(
+                obs1,
+                "La observación de la primera consulta no puede superar 1000 caracteres."
+            );
+        }
+
+        /* CONSULTA 2 */
+
+        if(fecha2.value && obs2.value.trim().length < 15){
+            marcarError(
+                obs2,
+                "Si registra segunda consulta debe escribir observaciones."
+            );
+        }
+
+        if(obs2.value.trim() && !fecha2.value){
+            marcarError(
+                fecha2,
+                "Debe registrar la fecha de la segunda consulta."
+            );
+        }
+
+        /* CONSULTA 3 */
+
+        if(fecha3.value && obs3.value.trim().length < 15){
+            marcarError(
+                obs3,
+                "Si registra tercera consulta debe escribir observaciones."
+            );
+        }
+
+        if(obs3.value.trim() && !fecha3.value){
+            marcarError(
+                fecha3,
+                "Debe registrar la fecha de la tercera consulta."
+            );
+        }
+
+        /* ORDEN DE FECHAS */
+
+        if(fecha1.value && fecha2.value){
+
+            if(new Date(fecha2.value) < new Date(fecha1.value)){
+                marcarError(
+                    fecha2,
+                    "La segunda consulta no puede ser anterior a la primera."
+                );
+            }
+        }
+
+        if(fecha2.value && fecha3.value){
+
+            if(new Date(fecha3.value) < new Date(fecha2.value)){
+                marcarError(
+                    fecha3,
+                    "La tercera consulta no puede ser anterior a la segunda."
+                );
+            }
+        }
+
+        /* FECHAS FUTURAS */
+
+        const hoy = new Date();
+        hoy.setHours(0,0,0,0);
+
+        [fecha1,fecha2,fecha3].forEach(fecha=>{
+
+            if(fecha.value){
+
+                const fechaIngresada = new Date(fecha.value);
+
+                if(fechaIngresada > hoy){
+
+                    marcarError(
+                        fecha,
+                        "No se permiten fechas futuras."
+                    );
                 }
-            });
-
-            const firstError = document.querySelector('.input-error');
-            if (!isValid && firstError) {
-                e.preventDefault();
-                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }
         });
-    }
+
+        /* ATENCIÓN FAMILIAR */
+
+        if(edad < 18){
+
+            if(atencionFamiliar.value.trim().length < 5){
+
+                marcarError(
+                    atencionFamiliar,
+                    "Para menores de edad debe registrar atención familiar."
+                );
+            }
+        }
+
+        /* CASO CERRADO */
+
+        if(
+            estadoCaso.value === "Cerrado" &&
+            (
+                !fecha3.value ||
+                obs3.value.trim().length < 15
+            )
+        ){
+
+            marcarError(
+                estadoCaso,
+                "Un caso cerrado debe tener tercera consulta registrada."
+            );
+        }
+
+        /* MOSTRAR ERRORES */
+
+        if(errores.length > 0){
+
+            e.preventDefault();
+
+            alert(
+                "Corrija los siguientes errores:\n\n• " +
+                errores.join("\n• ")
+            );
+
+            document
+                .querySelector('.input-error')
+                ?.scrollIntoView({
+                    behavior:'smooth',
+                    block:'center'
+                });
+
+            return false;
+        }
+
+    });
+
+}
 });
 
 function abrirModalAprendices() {

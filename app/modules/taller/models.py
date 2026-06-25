@@ -23,7 +23,6 @@ class Taller(db.Model):
         backref='talleres'
     )
 
-    # Nuevo campo
     aforo = db.Column(
         db.Integer,
         nullable=False,

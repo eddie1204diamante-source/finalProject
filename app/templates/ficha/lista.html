@@ -102,6 +102,18 @@
     .btn-sena-activate { background: linear-gradient(135deg, #27ae60, #2ecc71); }
 
     .center { text-align: center; }
+    .btn-importar {
+    background: linear-gradient(135deg, #27ae60, #2ecc71);
+    color: white !important;
+    padding: 10px 25px;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: bold;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    border: none;
+    transition: 0.3s;
+}
 </style>
 
 <div class="dashboard-area">
@@ -111,7 +123,7 @@
             <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar ficha...">
             {% if current_user.rol == 'ADMIN' %}
                 <a href="{{ url_for('ficha.crear_ficha') }}" class="btn-nuevo-ficha">+ Nueva Ficha</a>
-                <a href="{{ url_for('ficha.importar_excel') }}" class="btn-nexus-import">
+                <a href="{{ url_for('ficha.importar_excel') }}" class=".btn-importar">
     Importar Excel
 </a>
             {% endif %}

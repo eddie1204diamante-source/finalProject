@@ -111,6 +111,9 @@
             <input type="text" id="searchInput" class="search-input" onkeyup="filtrarTabla()" placeholder="Buscar ficha...">
             {% if current_user.rol == 'ADMIN' %}
                 <a href="{{ url_for('ficha.crear_ficha') }}" class="btn-nuevo-ficha">+ Nueva Ficha</a>
+                <a href="{{ url_for('ficha.importar_excel') }}" class="btn-nexus-import">
+    Importar Excel
+</a>
             {% endif %}
         </div>
     </div>

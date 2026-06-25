@@ -2,7 +2,9 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 from flask_login import login_required, current_user
 from app.database import db
 from app.modules.ficha.models import Ficha
-from app.modules.coordinacion.models import Coordinacion # Importante para el SELECT
+from app.modules.coordinacion.models import Coordinacion 
+import pandas as pd
+from app.modules.coordinacion.models import Coordinacion
 
 # Definimos el prefijo para que las URLs sean coherentes
 ficha_bp = Blueprint('ficha', __name__, url_prefix='/fichas')
@@ -127,3 +129,91 @@ def cambiar_estado(id):
         flash('No se pudo cambiar el estado.', 'error')
         
     return redirect(url_for('ficha.listar_fichas'))
+@ficha_bp.route('/importar', methods=['GET', 'POST'])
+@login_required
+def importar_excel():
+    if current_user.rol != 'ADMIN':
+        flash('No tienes permiso para realizar esta acción.', 'error')
+        return redirect(url_for('ficha.listar_fichas'))
+
+    if request.method == 'POST':
+        file = request.files.get('file')
+
+        if not file or file.filename == '':
+            flash('Por favor seleccione un archivo.', 'warning')
+            return redirect(request.url)
+
+        try:
+            df = pd.read_excel(file, dtype=str).fillna('')
+            df.columns = [str(c).strip() for c in df.columns]
+
+            # Permite columnas en mayúsculas o minúsculas
+            colmap = {c.lower(): c for c in df.columns}
+
+            requeridas = ['codigo', 'programa', 'jornada', 'modalidad', 'coordinacion']
+            faltantes = [c for c in requeridas if c not in colmap]
+
+            if faltantes:
+                flash(
+                    'Faltan columnas requeridas: ' + ', '.join(faltantes),
+                    'error'
+                )
+                return redirect(request.url)
+
+            agregadas = 0
+            duplicadas = 0
+            errores = 0
+
+            for index, row in df.iterrows():
+                try:
+                    codigo = str(row[colmap['codigo']]).strip().split('.')[0]
+                    programa = str(row[colmap['programa']]).strip()
+                    jornada = str(row[colmap['jornada']]).strip()
+                    modalidad = str(row[colmap['modalidad']]).strip()
+                    nombre_coord = str(row[colmap['coordinacion']]).strip()
+
+                    if not all([codigo, programa, jornada, modalidad, nombre_coord]):
+                        errores += 1
+                        continue
+
+                    if Ficha.query.filter_by(codigo=codigo).first():
+                        duplicadas += 1
+                        continue
+
+                    coordinacion = Coordinacion.query.filter(
+                        db.func.lower(Coordinacion.nombre) == nombre_coord.lower()
+                    ).first()
+
+                    if not coordinacion:
+                        errores += 1
+                        continue
+
+                    nueva_ficha = Ficha(
+                        codigo=codigo,
+                        programa=programa,
+                        jornada=jornada,
+                        modalidad=modalidad,
+                        coordinacion_id=coordinacion.id,
+                        activo=1
+                    )
+
+                    db.session.add(nueva_ficha)
+                    agregadas += 1
+
+                except Exception as e:
+                    print(f"Error en fila {index}: {str(e)}")
+                    errores += 1
+
+            db.session.commit()
+            flash(
+                f'Proceso terminado. Agregadas: {agregadas}, Duplicadas: {duplicadas}, Errores: {errores}',
+                'success'
+            )
+            return redirect(url_for('ficha.listar_fichas'))
+
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al procesar el archivo: {str(e)}', 'error')
+            return redirect(request.url)
+
+    return render_template('ficha/importar.html')

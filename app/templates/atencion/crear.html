@@ -23,6 +23,7 @@
         margin-bottom: 30px; 
         padding-bottom: 20px; 
         border-bottom: 1px solid #edf2f7; 
+        flex-wrap: wrap;
     }
     
     .input-nexus { 
@@ -93,6 +94,12 @@
         font-weight: bold; 
         cursor: pointer;
         transition: 0.3s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        white-space: nowrap;
     }
     .btn-nexus-form:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(37,117,252,0.2); }
 
@@ -106,17 +113,110 @@
         transition: 0.3s; 
         display: inline-block;
         text-align: center;
+        background: #fff;
     }
-    .input-error{
-    border: 2px solid #e74c3c !important;
-    animation: parpadeo .4s ease-in-out 3;
-}
+    .btn-cancelar:hover {
+        background: #f7fafc;
+        color: #2d3748;
+        border-color: #cbd5e0;
+    }
 
-@keyframes parpadeo{
-    0%{transform:scale(1);}
-    50%{transform:scale(1.02);}
-    100%{transform:scale(1);}
-}
+    .btn-aprendices {
+        background: #16a34a;
+        color: white !important;
+        padding: 12px 20px;
+        border-radius: 50px;
+        border: none;
+        font-weight: 700;
+        cursor: pointer;
+        transition: 0.3s;
+        white-space: nowrap;
+    }
+    .btn-aprendices:hover {
+        background: #15803d;
+        transform: translateY(-1px);
+    }
+
+    .input-error{
+        border: 2px solid #e74c3c !important;
+        animation: parpadeo .4s ease-in-out 3;
+    }
+
+    @keyframes parpadeo{
+        0%{transform:scale(1);}
+        50%{transform:scale(1.02);}
+        100%{transform:scale(1);}
+    }
+
+    /* MODAL DE APRENDICES */
+    .modal-aprendices{
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:9999;
+        background:rgba(0,0,0,.55);
+        padding:20px;
+    }
+
+    .modal-contenido{
+        background:white;
+        max-width:950px;
+        margin:40px auto;
+        border-radius:15px;
+        padding:20px;
+        max-height:80vh;
+        overflow:auto;
+    }
+
+    .modal-header-aprendices{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        margin-bottom:15px;
+    }
+
+    .cerrar-modal{
+        border:none;
+        background:#f1f5f9;
+        width:35px;
+        height:35px;
+        border-radius:50%;
+        cursor:pointer;
+        font-size:1.2rem;
+    }
+
+    .tabla-aprendices{
+        width:100%;
+        border-collapse:collapse;
+    }
+
+    .tabla-aprendices th,
+    .tabla-aprendices td{
+        padding:10px;
+        border-bottom:1px solid #e2e8f0;
+    }
+
+    .tabla-aprendices tbody tr{
+        cursor:pointer;
+    }
+
+    .tabla-aprendices tbody tr:hover{
+        background:#f8faff;
+    }
+
+    .filtro-aprendiz{
+        margin-bottom:15px;
+    }
+
+    @media (max-width: 640px) {
+        .grid-fields { grid-template-columns: 1fr; }
+        .form-container { padding: 20px; }
+        .full-width, .half-width { grid-column: span 1; }
+        .search-box { flex-direction: column; align-items: stretch; }
+        .info-grid { grid-template-columns: 1fr; }
+        .modal-contenido { margin: 10px auto; padding: 16px; }
+        .tabla-aprendices th, .tabla-aprendices td { font-size: 0.8rem; padding: 10px; }
+    }
 </style>
 
 <div class="dashboard-area">
@@ -135,10 +235,63 @@
             {% endwith %}
         </div>
 
-        <form method="GET" action="{{ url_for('atencion.crear') }}" class="search-box">
-            <input type="text" name="documento" class="input-nexus" placeholder="Documento del aprendiz..." value="{{ documento or '' }}">
+        <form method="GET" action="{{ url_for('atencion.crear') }}" class="search-box" id="buscarForm">
+            <input
+                type="text"
+                name="documento"
+                id="documento"
+                class="input-nexus"
+                placeholder="Documento del aprendiz..."
+                value="{{ documento or '' }}"
+            >
             <button type="submit" class="btn-nexus-form">Buscar</button>
+            <button type="button" class="btn-aprendices" onclick="abrirModalAprendices()">👥 Aprendices</button>
         </form>
+
+        <!-- Modal de aprendices activos -->
+        <div id="modalAprendices" class="modal-aprendices" aria-hidden="true">
+            <div class="modal-contenido">
+                <div class="modal-header-aprendices">
+                    <h3>Aprendices Activos</h3>
+                    <button type="button" class="cerrar-modal" onclick="cerrarModalAprendices()">&times;</button>
+                </div>
+
+                <p style="color:#64748b; font-size:0.85rem; margin:0 0 16px 0;">
+                    Busca un aprendiz y haz clic en “Seleccionar” para cargar su documento.
+                </p>
+
+                <input
+                    type="text"
+                    id="filtroAprendiz"
+                    class="input-nexus filtro-aprendiz"
+                    placeholder="Filtrar por nombre o documento..."
+                    onkeyup="filtrarAprendices()"
+                >
+
+                <table class="tabla-aprendices">
+                    <thead>
+                        <tr>
+                            <th>Documento</th>
+                            <th>Nombre</th>
+                            <th>Ficha</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyAprendices">
+                        {% for a in aprendices_activos %}
+                        <tr onclick="seleccionarAprendiz('{{ a.numero_documento }}')">
+                            <td>{{ a.numero_documento }}</td>
+                            <td>{{ a.nombres }} {{ a.apellidos }}</td>
+                            <td>{{ a.ficha.codigo if a.ficha else 'N/A' }}</td>
+                            <td>
+                                <button type="button" class="btn-nexus-form" style="padding:8px 14px;">Seleccionar</button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
         {% if aprendiz %}
         <div class="info-card">
@@ -170,9 +323,9 @@
             </div>
         </div>
 
-        <form method="POST" action="{{ url_for('atencion.guardar') }}" novalidate>
+        <form method="POST" action="{{ url_for('atencion.guardar') }}" novalidate id="atencionForm">
             <input type="hidden" name="aprendiz_id" value="{{ aprendiz.id }}">
-            <input type="hidden" name="doc_temp" value="{{ documento }}">
+            <input type="hidden" name="doc_temp" value="{{ documento or aprendiz.numero_documento }}">
             
             <div class="grid-fields">
                 <div class="half-width">
@@ -185,6 +338,7 @@
                     </select>
                     {% if errors and errors.usuario_id %}<span class="error-campo">{{ errors.usuario_id }}</span>{% endif %}
                 </div>
+
                 <div>
                     <label>Estado del Caso *</label>
                     <select name="estado_caso" class="input-nexus">
@@ -205,11 +359,13 @@
                     </select>
                     {% if errors and errors.categoria_desercion %}<span class="error-campo">{{ errors.categoria_desercion }}</span>{% endif %}
                 </div>
+
                 <div>
                     <label>Remitido Por *</label>
                     <input type="text" name="remitido_por" class="input-nexus" placeholder="Nombre de quien remite" value="{{ request.form.get('remitido_por', '') }}">
                     {% if errors and errors.remitido_por %}<span class="error-campo">{{ errors.remitido_por }}</span>{% endif %}
                 </div>
+
                 <div>
                     <label>Atención Familiar (Menores)</label>
                     <input type="text" id="atencionFamiliar" name="atencion_familiar" class="input-nexus" value="{{ request.form.get('atencion_familiar', '') }}">
@@ -275,14 +431,97 @@
 </div>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const edad = document.getElementById("edadAprendiz");
-        const inputFamiliar = document.getElementById("atencionFamiliar");
-        if (edad && inputFamiliar && parseInt(edad.value) >= 18) {
-            inputFamiliar.disabled = true;
-            inputFamiliar.placeholder = "No aplica (Mayor de edad)";
-            inputFamiliar.style.background = "#f7fafc";
-        }
+document.addEventListener('DOMContentLoaded', function() {
+    const edad = document.getElementById("edadAprendiz");
+    const inputFamiliar = document.getElementById("atencionFamiliar");
+    if (edad && inputFamiliar && parseInt(edad.value) >= 18) {
+        inputFamiliar.disabled = true;
+        inputFamiliar.placeholder = "No aplica (Mayor de edad)";
+        inputFamiliar.style.background = "#f7fafc";
+    }
+
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.addEventListener('click', function(e) {
+            if (e.target === modal) {
+                cerrarModalAprendices();
+            }
+        });
+    }
+
+    const form = document.getElementById('atencionForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
+
+            document.querySelectorAll('.error-campo').forEach(el => {
+                if (el.style.display !== 'block') el.style.display = 'none';
+            });
+            document.querySelectorAll('.input-nexus').forEach(el => el.classList.remove('input-error'));
+
+            this.querySelectorAll('[required]').forEach(input => {
+                if (!input.value.trim()) {
+                    isValid = false;
+                    input.classList.add('input-error');
+                    const errorSpan = input.parentNode.querySelector('.error-campo');
+                    if (errorSpan) errorSpan.style.display = 'block';
+                }
+            });
+
+            const firstError = document.querySelector('.input-error');
+            if (!isValid && firstError) {
+                e.preventDefault();
+                firstError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+        });
+    }
+});
+
+function abrirModalAprendices() {
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.style.display = 'block';
+        modal.setAttribute('aria-hidden', 'false');
+        const filtro = document.getElementById('filtroAprendiz');
+        if (filtro) filtro.focus();
+    }
+}
+
+function cerrarModalAprendices() {
+    const modal = document.getElementById('modalAprendices');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.setAttribute('aria-hidden', 'true');
+    }
+}
+
+function seleccionarAprendiz(documento) {
+    const inputDocumento = document.getElementById('documento');
+    const formBuscar = document.getElementById('buscarForm');
+
+    if (inputDocumento) {
+        inputDocumento.value = documento;
+    }
+
+    cerrarModalAprendices();
+
+    if (formBuscar) {
+        formBuscar.submit();
+    }
+}
+
+function filtrarAprendices() {
+    const filtro = document.getElementById('filtroAprendiz');
+    const tbody = document.getElementById('tbodyAprendices');
+    if (!filtro || !tbody) return;
+
+    const texto = filtro.value.toUpperCase();
+    const filas = tbody.querySelectorAll('tr');
+
+    filas.forEach(fila => {
+        const contenido = fila.textContent.toUpperCase();
+        fila.style.display = contenido.includes(texto) ? '' : 'none';
     });
+}
 </script>
 {% endblock %}

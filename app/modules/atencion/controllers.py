@@ -9,10 +9,12 @@ from sqlalchemy.orm import joinedload
 
 atencion_bp = Blueprint('atencion', __name__, url_prefix='/atencion')
 
+
 def clean_int(value):
     if value and str(value).strip().isdigit():
         return int(value)
     return None
+
 
 def preparar_datos_aprendiz(aprendiz):
     if not aprendiz:
@@ -28,12 +30,13 @@ def preparar_datos_aprendiz(aprendiz):
     aprendiz.telefono = getattr(aprendiz, 'celular', 'N/A')
     return aprendiz
 
+
 @atencion_bp.route('/')
 @login_required
 def listar():
-
     atenciones = Atencion.query.options(joinedload(Atencion.profesional)).order_by(Atencion.id.asc()).all()
     return render_template('atencion/lista.html', atenciones=atenciones)
+
 
 @atencion_bp.route('/crear', methods=['GET'])
 @login_required
@@ -42,7 +45,17 @@ def crear():
         flash('No tiene permisos para acceder al módulo.', 'danger')
         return redirect(url_for('main.dashboard'))
     
-    profesionales = Usuario.query.filter(Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']), Usuario.enabled.is_(True)).all()
+    profesionales = Usuario.query.filter(
+        Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']),
+        Usuario.enabled.is_(True)
+    ).all()
+
+    aprendices_activos = Aprendiz.query.filter_by(
+        activo=1
+    ).order_by(
+        Aprendiz.nombres
+    ).all()
+
     documento = request.args.get('documento', '').strip()
     aprendiz = None
     
@@ -53,23 +66,35 @@ def crear():
         else:
             aprendiz = preparar_datos_aprendiz(aprendiz)
             
-    return render_template('atencion/crear.html', profesionales=profesionales, aprendiz=aprendiz, documento=documento, errors={})
+    return render_template(
+        'atencion/crear.html',
+        profesionales=profesionales,
+        aprendices_activos=aprendices_activos,
+        aprendiz=aprendiz,
+        documento=documento,
+        errors={}
+    )
+
 
 @atencion_bp.route('/guardar', methods=['POST'])
 @login_required
 def guardar():
     errors = {}
     aprendiz_id = clean_int(request.form.get('aprendiz_id'))
-    usuario_id = clean_int(request.form.get('usuario_id')) # Este es el ID que viene del select
+    usuario_id = clean_int(request.form.get('usuario_id'))  # ID del profesional
     categoria = request.form.get('categoria_desercion')
     remitido = (request.form.get('remitido_por') or "").strip()
     estado = request.form.get('estado_caso')
     atencion_fam = (request.form.get('atencion_familiar') or "").strip()
     
-    if not usuario_id: errors['usuario_id'] = "Debe seleccionar un profesional responsable."
-    if not categoria: errors['categoria_desercion'] = "La categoría de deserción es obligatoria."
-    if len(remitido) < 3: errors['remitido_por'] = "Indique quién remite (mínimo 3 caracteres)."
-    if not estado: errors['estado_caso'] = "El estado del caso es obligatorio."
+    if not usuario_id:
+        errors['usuario_id'] = "Debe seleccionar un profesional responsable."
+    if not categoria:
+        errors['categoria_desercion'] = "La categoría de deserción es obligatoria."
+    if len(remitido) < 3:
+        errors['remitido_por'] = "Indique quién remite (mínimo 3 caracteres)."
+    if not estado:
+        errors['estado_caso'] = "El estado del caso es obligatorio."
 
     aprendiz = Aprendiz.query.get(aprendiz_id) if aprendiz_id else None
     if aprendiz:
@@ -83,8 +108,10 @@ def guardar():
         o_val = (request.form.get(f'observaciones_{i}') or "").strip()
         
         if i == 1:
-            if not f_val: errors['fecha_consulta_1'] = "La fecha 1 es obligatoria."
-            if len(o_val) < 3: errors['observaciones_1'] = "La observación 1 es obligatoria (mínimo 3 caracteres)."
+            if not f_val:
+                errors['fecha_consulta_1'] = "La fecha 1 es obligatoria."
+            if len(o_val) < 3:
+                errors['observaciones_1'] = "La observación 1 es obligatoria (mínimo 3 caracteres)."
         else:
             if f_val and len(o_val) < 3:
                 errors[f'observaciones_{i}'] = f"Si hay fecha {i}, la observación no puede ser opcional."
@@ -92,10 +119,25 @@ def guardar():
                 errors[f'fecha_consulta_{i}'] = f"Si registra observación {i}, la fecha es obligatoria."
 
     if errors:
-        profesionales = Usuario.query.filter(Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']), Usuario.enabled.is_(True)).all()
-        return render_template('atencion/crear.html', profesionales=profesionales, 
-                               aprendiz=aprendiz,
-                               documento=request.form.get('doc_temp'), errors=errors)
+        profesionales = Usuario.query.filter(
+            Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']),
+            Usuario.enabled.is_(True)
+        ).all()
+
+        aprendices_activos = Aprendiz.query.filter_by(
+            activo=1
+        ).order_by(
+            Aprendiz.nombres
+        ).all()
+
+        return render_template(
+            'atencion/crear.html',
+            profesionales=profesionales,
+            aprendices_activos=aprendices_activos,
+            aprendiz=aprendiz,
+            documento=request.form.get('doc_temp'),
+            errors=errors
+        )
 
     try:
         def get_date(field):
@@ -103,14 +145,18 @@ def guardar():
             return datetime.strptime(val, '%Y-%m-%d').date() if val else None
 
         nueva_atencion = Atencion(
-            aprendiz_id=aprendiz_id, 
-            usuario_id=usuario_id, # Se guarda el ID del profesional elegido
+            aprendiz_id=aprendiz_id,
+            usuario_id=usuario_id,
             estado_caso=estado,
-            categoria_desercion=categoria, remitido_por=remitido,
-            atencion_familiar=atencion_fam, 
-            fecha_consulta_1=get_date('fecha_consulta_1'), observaciones_1=request.form.get('observaciones_1'),
-            fecha_consulta_2=get_date('fecha_consulta_2'), observaciones_2=request.form.get('observaciones_2'),
-            fecha_consulta_3=get_date('fecha_consulta_3'), observaciones_3=request.form.get('observaciones_3'),
+            categoria_desercion=categoria,
+            remitido_por=remitido,
+            atencion_familiar=atencion_fam,
+            fecha_consulta_1=get_date('fecha_consulta_1'),
+            observaciones_1=request.form.get('observaciones_1'),
+            fecha_consulta_2=get_date('fecha_consulta_2'),
+            observaciones_2=request.form.get('observaciones_2'),
+            fecha_consulta_3=get_date('fecha_consulta_3'),
+            observaciones_3=request.form.get('observaciones_3'),
             activo=True
         )
         db.session.add(nueva_atencion)
@@ -122,11 +168,15 @@ def guardar():
         flash(f'Error de base de datos: {str(e)}', 'danger')
         return redirect(url_for('atencion.listar'))
 
+
 @atencion_bp.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar(id):
     atencion = Atencion.query.get_or_404(id)
-    profesionales = Usuario.query.filter(Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']), Usuario.enabled.is_(True)).all()
+    profesionales = Usuario.query.filter(
+        Usuario.rol.in_(['PSICOLOGA', 'T_SOCIAL']),
+        Usuario.enabled.is_(True)
+    ).all()
     aprendiz = preparar_datos_aprendiz(atencion.aprendiz)
     errors = {}
 
@@ -135,8 +185,10 @@ def editar(id):
         remitido = (request.form.get('remitido_por') or "").strip()
         atencion_fam = (request.form.get('atencion_familiar') or "").strip()
         
-        if not usuario_id: errors['usuario_id'] = "Debe asignar un profesional."
-        if len(remitido) < 3: errors['remitido_por'] = "El campo Remitido Por es obligatorio (mínimo 3 caracteres)."
+        if not usuario_id:
+            errors['usuario_id'] = "Debe asignar un profesional."
+        if len(remitido) < 3:
+            errors['remitido_por'] = "El campo Remitido Por es obligatorio (mínimo 3 caracteres)."
         
         if isinstance(aprendiz.edad, int) and aprendiz.edad < 18:
             if not atencion_fam:
@@ -146,8 +198,10 @@ def editar(id):
             f_val = request.form.get(f'fecha_consulta_{i}')
             o_val = (request.form.get(f'observaciones_{i}') or "").strip()
             if i == 1:
-                if not f_val: errors['fecha_consulta_1'] = "Fecha 1 requerida."
-                if len(o_val) < 3: errors['observaciones_1'] = "Observación 1 requerida (mínimo 3 caracteres)."
+                if not f_val:
+                    errors['fecha_consulta_1'] = "Fecha 1 requerida."
+                if len(o_val) < 3:
+                    errors['observaciones_1'] = "Observación 1 requerida (mínimo 3 caracteres)."
             else:
                 if f_val and len(o_val) < 3:
                     errors[f'observaciones_{i}'] = f"La observación {i} es obligatoria si hay fecha."
@@ -175,13 +229,20 @@ def editar(id):
                 db.session.rollback()
                 flash(f'Error al actualizar: {str(e)}', 'danger')
         
-    return render_template('atencion/editar.html', atencion=atencion, profesionales=profesionales, aprendiz=aprendiz, errors=errors)
+    return render_template(
+        'atencion/editar.html',
+        atencion=atencion,
+        profesionales=profesionales,
+        aprendiz=aprendiz,
+        errors=errors
+    )
+
 
 @atencion_bp.route('/cambiar_estado/<int:id>', methods=['POST'])
 @login_required
 def cambiar_estado(id):
     atencion = Atencion.query.get_or_404(id)
-    atencion.activo = not atencion.activo 
+    atencion.activo = not atencion.activo
     try:
         db.session.commit()
         mensaje = "Atención inactivada correctamente." if not atencion.activo else "Atención activada correctamente."

@@ -257,8 +257,21 @@
 
 form.addEventListener("submit", function(e){
 
+    const fecha1 = document.querySelector('[name="fecha_consulta_1"]').value;
     const fecha2 = document.querySelector('[name="fecha_consulta_2"]').value;
     const fecha3 = document.querySelector('[name="fecha_consulta_3"]').value;
+
+    if(fecha1 && fecha2 && fecha2 < fecha1){
+        e.preventDefault();
+
+        Swal.fire({
+            icon: "error",
+            title: "Error",
+            text: "La segunda consulta no puede ser anterior a la primera."
+        });
+
+        return false;
+    }
 
     if(fecha2 && fecha3 && fecha3 < fecha2){
         e.preventDefault();
@@ -266,7 +279,7 @@ form.addEventListener("submit", function(e){
         Swal.fire({
             icon: "error",
             title: "Error",
-            text: "La fecha de cierre no puede ser anterior al último seguimiento"
+            text: "La tercera consulta no puede ser anterior a la segunda."
         });
 
         return false;
